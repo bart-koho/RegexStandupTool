@@ -62,83 +62,71 @@ export default function TeamMemberList({
   const assignmentsByMemberId = new Map(assignments.map(a => [a.teamMemberId, a]));
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle>Team Members</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {selectedIds.length > 0 && (
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                onClick={() => assignMutation.mutate()}
-                disabled={assignMutation.isPending}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Send to Selected
-              </Button>
-            </div>
-          )}
+    <div className="space-y-4">
+      {selectedIds.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            onClick={() => assignMutation.mutate()}
+            disabled={assignMutation.isPending}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Send to Selected
+          </Button>
+        </div>
+      )}
 
-          {members?.map((member) => {
-            const assignment = assignmentsByMemberId.get(member.id);
-            const status = assignment?.status || "not-assigned";
+      <div className="space-y-2">
+        {members?.map((member) => {
+          const assignment = assignmentsByMemberId.get(member.id);
+          const status = assignment?.status || "not-assigned";
 
-            return (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <Checkbox
-                    id={`member-${member.id}`}
-                    checked={selectedIds.includes(member.id)}
-                    disabled={assignedIds.has(member.id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedIds(
-                        checked
-                          ? [...selectedIds, member.id]
-                          : selectedIds.filter((id) => id !== member.id)
-                      );
-                    }}
-                  />
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <label
-                        htmlFor={`member-${member.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {member.name}
-                      </label>
-                      {status !== "not-assigned" && (
-                        <Badge
-                          variant={status === "completed" ? "default" : "secondary"}
-                          className={cn(
-                            status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-                            status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-                          )}
-                        >
-                          {status === "completed" ? "Responded" : "Pending"}
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="block text-xs text-muted-foreground mt-1">
-                      {member.email}
-                    </span>
-                  </div>
+          return (
+            <div
+              key={member.id}
+              className="flex items-center justify-between py-2 px-4 border rounded-lg hover:bg-accent/50"
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <Checkbox
+                  id={`member-${member.id}`}
+                  checked={selectedIds.includes(member.id)}
+                  disabled={assignedIds.has(member.id)}
+                  onCheckedChange={(checked) => {
+                    setSelectedIds(
+                      checked
+                        ? [...selectedIds, member.id]
+                        : selectedIds.filter((id) => id !== member.id)
+                    );
+                  }}
+                />
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-medium">{member.name}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-muted-foreground truncate">{member.email}</span>
                 </div>
               </div>
-            );
-          })}
-
-          {(!members || members.length === 0) && (
-            <div className="text-center py-4 text-muted-foreground">
-              No team members available. Add team members first.
+              {status !== "not-assigned" && (
+                <Badge
+                  variant={status === "completed" ? "default" : "secondary"}
+                  className={cn(
+                    "ml-4",
+                    status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+                    status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                  )}
+                >
+                  {status === "completed" ? "Responded" : "Pending"}
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          );
+        })}
+
+        {(!members || members.length === 0) && (
+          <div className="text-center py-4 text-muted-foreground">
+            No team members available. Add team members first.
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
