@@ -1,17 +1,25 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { Color } from '@tiptap/extension-color'
+import TextStyle from '@tiptap/extension-text-style'
+import ListItem from '@tiptap/extension-list-item'
 import { cn } from "@/lib/utils"
-import { Toggle } from "@/components/ui/toggle"
-import { 
-  Bold, 
-  Italic, 
-  List, 
+import { Button } from "@/components/ui/button"
+import {
+  Bold,
+  Italic,
+  List,
   ListOrdered,
   Code,
   Quote,
-  AlignLeft,
-  AlignCenter,
-  AlignRight
+  XCircle,
+  Undo,
+  Redo,
+  Pilcrow,
+  Heading1,
+  Heading2,
+  Minus,
+  RotateCcw
 } from 'lucide-react'
 
 export interface TiptapEditorProps {
@@ -20,6 +28,134 @@ export interface TiptapEditorProps {
   disabled?: boolean
   placeholder?: string
   className?: string
+}
+
+const MenuBar = ({ editor }: { editor: any }) => {
+  if (!editor) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 border-b bg-muted/50 p-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        disabled={!editor.can().chain().focus().toggleBold().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('bold') && "bg-muted")}
+      >
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        disabled={!editor.can().chain().focus().toggleItalic().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('italic') && "bg-muted")}
+      >
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        disabled={!editor.can().chain().focus().toggleCode().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('code') && "bg-muted")}
+      >
+        <Code className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().unsetAllMarks().run()}
+        className="h-8 w-8 p-0"
+      >
+        <XCircle className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().clearNodes().run()}
+        className="h-8 w-8 p-0"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().setParagraph().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('paragraph') && "bg-muted")}
+      >
+        <Pilcrow className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('heading', { level: 1 }) && "bg-muted")}
+      >
+        <Heading1 className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('heading', { level: 2 }) && "bg-muted")}
+      >
+        <Heading2 className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('bulletList') && "bg-muted")}
+      >
+        <List className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('orderedList') && "bg-muted")}
+      >
+        <ListOrdered className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        className={cn("h-8 w-8 p-0", editor.isActive('blockquote') && "bg-muted")}
+      >
+        <Quote className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        className="h-8 w-8 p-0"
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().chain().focus().undo().run()}
+        className="h-8 w-8 p-0"
+      >
+        <Undo className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().chain().focus().redo().run()}
+        className="h-8 w-8 p-0"
+      >
+        <Redo className="h-4 w-4" />
+      </Button>
+    </div>
+  )
 }
 
 export function TiptapEditor({
@@ -31,6 +167,8 @@ export function TiptapEditor({
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
+      Color.configure({ types: [TextStyle.name, ListItem.name] }),
+      TextStyle.configure({ types: [ListItem.name] }),
       StarterKit.configure({
         bulletList: {
           keepMarks: true,
@@ -40,20 +178,6 @@ export function TiptapEditor({
           keepMarks: true,
           keepAttributes: false,
         },
-        code: {
-          HTMLAttributes: {
-            class: 'rounded-md bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold',
-          },
-        },
-        blockquote: {
-          HTMLAttributes: {
-            class: 'border-l-2 pl-4 italic',
-          },
-        },
-        heading: false,
-        horizontalRule: false,
-        dropcursor: false,
-        gapcursor: false,
       }),
     ],
     content: value,
@@ -61,7 +185,7 @@ export function TiptapEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm max-w-none focus:outline-none min-h-[150px]',
+          'prose prose-sm max-w-none focus:outline-none min-h-[150px] px-3 py-2',
           disabled && 'cursor-not-allowed opacity-60',
         ),
       },
@@ -77,57 +201,8 @@ export function TiptapEditor({
 
   return (
     <div className={cn('rounded-lg border bg-card', className)}>
-      <div className="flex flex-wrap gap-1 border-b bg-muted/50 p-1">
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('bold')}
-          onPressedChange={() => editor.chain().focus().toggleBold().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <Bold className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('italic')}
-          onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <Italic className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('bulletList')}
-          onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <List className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('orderedList')}
-          onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <ListOrdered className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('code')}
-          onPressedChange={() => editor.chain().focus().toggleCode().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <Code className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={editor.isActive('blockquote')}
-          onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-          className="data-[state=on]:bg-muted"
-        >
-          <Quote className="h-4 w-4" />
-        </Toggle>
-      </div>
-      <div className="relative p-3">
+      <MenuBar editor={editor} />
+      <div className="relative">
         <EditorContent editor={editor} />
         {editor.isEmpty && placeholder && (
           <div className="absolute top-[calc(0.75rem)] left-[calc(0.75rem)] text-muted-foreground pointer-events-none">
