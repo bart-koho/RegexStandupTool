@@ -60,28 +60,26 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
-        {canSubmitResponse && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PenLine className="h-4 w-4 mr-2" />
-                Submit Response
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Submit Your Standup Response</DialogTitle>
-              </DialogHeader>
-              <ResponseForm 
-                responseUrl={userAssignment?.responseUrl}
-                onSuccess={() => setDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
       <div className="grid gap-6">
+        {canSubmitResponse && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Submit Your Response</CardTitle>
+              <CardDescription>
+                Please provide your updates for today's standup
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponseForm 
+                responseUrl={userAssignment.responseUrl}
+                onSuccess={() => window.location.reload()}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Team Members</CardTitle>
