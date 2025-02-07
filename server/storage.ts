@@ -1,55 +1,46 @@
 import { IStorage } from "./types";
 import {
-  User,
-  TeamMember,
-  Standup,
-  StandupAssignment,
-  InsertUser,
+  users,
+  teamMembers,
+  standups,
+  standupAssignments,
+  type User,
+  type TeamMember,
+  type Standup,
+  type StandupAssignment,
+  type InsertUser,
 } from "@shared/schema";
-import createMemoryStore from "memorystore";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import { randomBytes } from "crypto";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+import crypto from 'crypto';
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private teamMembers: Map<number, TeamMember>;
-  private standups: Map<number, Standup>;
-  private assignments: Map<number, StandupAssignment>;
-  private currentIds: { [key: string]: number };
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.teamMembers = new Map();
-    this.standups = new Map();
-    this.assignments = new Map();
-    this.currentIds = {
-      users: 1,
-      teamMembers: 1,
-      standups: 1,
-      assignments: 1,
-    };
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentIds.users++;
-    const user = { id, ...insertUser };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
@@ -57,31 +48,34 @@ export class MemStorage implements IStorage {
     userId: number,
     member: Omit<TeamMember, "id" | "userId" | "active">,
   ): Promise<TeamMember> {
-    const id = this.currentIds.teamMembers++;
-    const teamMember = { id, userId, active: true, ...member };
-    this.teamMembers.set(id, teamMember);
+    const [teamMember] = await db
+      .insert(teamMembers)
+      .values({ ...member, userId, active: true })
+      .returning();
     return teamMember;
   }
 
   async getTeamMembers(userId: number): Promise<TeamMember[]> {
-    return Array.from(this.teamMembers.values()).filter(
-      (member) => member.userId === userId && member.active,
-    );
+    return db
+      .select()
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, userId))
+      .where(eq(teamMembers.active, true));
   }
 
   async createStandup(
     userId: number,
     standup: Omit<Standup, "id" | "userId" | "createdAt" | "status">,
   ): Promise<Standup> {
-    const id = this.currentIds.standups++;
-    const newStandup = {
-      id,
-      userId,
-      createdAt: new Date(),
-      status: "draft",
-      ...standup,
-    };
-    this.standups.set(id, newStandup);
+    const [newStandup] = await db
+      .insert(standups)
+      .values({
+        ...standup,
+        userId,
+        status: "draft",
+        createdAt: new Date(),
+      })
+      .returning();
     return newStandup;
   }
 
@@ -89,58 +83,45 @@ export class MemStorage implements IStorage {
     standupId: number,
     teamMemberIds: number[],
   ): Promise<StandupAssignment[]> {
-    const assignments: StandupAssignment[] = [];
-
-    for (const teamMemberId of teamMemberIds) {
-      const id = this.currentIds.assignments++;
-      const responseUrl = randomBytes(32).toString("hex");
-      const assignment = {
-        id,
-        standupId,
-        teamMemberId,
-        responseUrl,
-        status: "pending",
-        response: null,
-      };
-      this.assignments.set(id, assignment);
-      assignments.push(assignment);
-    }
-
+    const assignments = await Promise.all(
+      teamMemberIds.map(async (teamMemberId) => {
+        const [assignment] = await db
+          .insert(standupAssignments)
+          .values({
+            standupId,
+            teamMemberId,
+            responseUrl: crypto.randomBytes(32).toString("hex"),
+            status: "pending",
+          })
+          .returning();
+        return assignment;
+      }),
+    );
     return assignments;
   }
 
   async getStandupsByUser(userId: number): Promise<Standup[]> {
-    return Array.from(this.standups.values()).filter(
-      (standup) => standup.userId === userId,
-    );
+    return db.select().from(standups).where(eq(standups.userId, userId));
   }
 
   async getStandupAssignments(standupId: number): Promise<StandupAssignment[]> {
-    return Array.from(this.assignments.values()).filter(
-      (assignment) => assignment.standupId === standupId,
-    );
+    return db
+      .select()
+      .from(standupAssignments)
+      .where(eq(standupAssignments.standupId, standupId));
   }
 
   async submitResponse(
     responseUrl: string,
     response: any,
   ): Promise<StandupAssignment | undefined> {
-    const assignment = Array.from(this.assignments.values()).find(
-      (a) => a.responseUrl === responseUrl,
-    );
-
-    if (assignment) {
-      const updated = {
-        ...assignment,
-        response,
-        status: "completed",
-      };
-      this.assignments.set(assignment.id, updated);
-      return updated;
-    }
-
-    return undefined;
+    const [assignment] = await db
+      .update(standupAssignments)
+      .set({ response, status: "completed" })
+      .where(eq(standupAssignments.responseUrl, responseUrl))
+      .returning();
+    return assignment;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
