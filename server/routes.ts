@@ -89,7 +89,9 @@ export function registerRoutes(app: Express): Server {
       res.sendStatus(200);
     } catch (error) {
       console.error('Error deleting team member:', error);
-      res.status(500).json({ message: 'Failed to delete team member' });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Failed to delete team member' 
+      });
     }
   });
 
