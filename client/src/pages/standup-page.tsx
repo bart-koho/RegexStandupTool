@@ -170,9 +170,11 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                           className="text-sm mt-2 text-muted-foreground prose prose-sm max-w-none"
                           dangerouslySetInnerHTML={{ __html: response.response }}
                         />
-                        <div className="flex items-center gap-1.5">
+                        <div className="mt-2">
                           <ResponseComments assignmentId={assignment.id} />
-                          <ResponseReactions assignmentId={assignment.id} />
+                          <div className="flex justify-end mt-2">
+                            <ResponseReactions assignmentId={assignment.id} />
+                          </div>
                         </div>
                       </>
                     )}
