@@ -27,16 +27,18 @@ export default function TopNav() {
                 Standups
               </Button>
             </Link>
-            <Link href="/team">
-              <Button 
-                variant={isActive("/team") ? "default" : "ghost"}
-                size="sm"
-                className="gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Team Management
-              </Button>
-            </Link>
+            {user.role === 'admin' && (
+              <Link href="/team">
+                <Button 
+                  variant={isActive("/team") ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  Team Management
+                </Button>
+              </Link>
+            )}
           </div>
           <Button
             variant="ghost"

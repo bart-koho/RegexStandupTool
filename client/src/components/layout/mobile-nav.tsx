@@ -26,17 +26,19 @@ export default function MobileNav() {
               <span>Standups</span>
             </a>
           </Link>
-          <Link href="/team">
-            <a
-              className={cn(
-                "flex flex-col items-center gap-1 text-sm rounded-lg p-3 hover:bg-accent",
-                isActive("/team") ? "text-primary bg-accent" : "text-muted-foreground"
-              )}
-            >
-              <Users className="h-5 w-5" />
-              <span>Team</span>
-            </a>
-          </Link>
+          {user.role === 'admin' && (
+            <Link href="/team">
+              <a
+                className={cn(
+                  "flex flex-col items-center gap-1 text-sm rounded-lg p-3 hover:bg-accent",
+                  isActive("/team") ? "text-primary bg-accent" : "text-muted-foreground"
+                )}
+              >
+                <Users className="h-5 w-5" />
+                <span>Team</span>
+              </a>
+            </Link>
+          )}
         </div>
       </div>
     </nav>
