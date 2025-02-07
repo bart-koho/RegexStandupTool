@@ -2,12 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Standup, StandupAssignment, StandupResponse, TeamMember } from "@shared/schema";
 import TeamMemberList from "@/components/standups/team-member-list";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, PenLine } from "lucide-react";
 import { Link } from "wouter";
 import Container from "@/components/layout/container";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
+import ResponseForm from "@/components/standups/response-form";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
+  const { user } = useAuth();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const { data: standup, isLoading: loadingStandup } = useQuery<Standup>({
     queryKey: [`/api/standups/${params.id}`],
   });
@@ -28,24 +36,49 @@ export default function StandupPage({ params }: { params: { id: string } }) {
 
   if (!standup) return null;
 
+  // Find the current user's assignment if they have one
+  const userAssignment = assignments?.find(a => a.teamMemberId === user?.id);
+  const canSubmitResponse = userAssignment && userAssignment.status === "pending";
+
   return (
     <Container className="py-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/">
-          <a className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </a>
-        </Link>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Standup {standup.identifier}
-          </h1>
-          {standup.description && (
-            <p className="text-muted-foreground">
-              {standup.description}
-            </p>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <a className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </a>
+          </Link>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Standup {standup.identifier}
+            </h1>
+            {standup.description && (
+              <p className="text-muted-foreground">
+                {standup.description}
+              </p>
+            )}
+          </div>
         </div>
+        {canSubmitResponse && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PenLine className="h-4 w-4 mr-2" />
+                Submit Response
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Submit Your Standup Response</DialogTitle>
+              </DialogHeader>
+              <ResponseForm 
+                responseUrl={userAssignment?.responseUrl}
+                onSuccess={() => setDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="grid gap-6">
