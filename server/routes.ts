@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, responseSchema, users, standups } from "@shared/schema";
+import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
 import { eq, desc, sql } from 'drizzle-orm';
@@ -183,15 +183,62 @@ export function registerRoutes(app: Express): Server {
       const pageSize = 25;
       const offset = (page - 1) * pageSize;
 
+      // First get the user's team member record if they're not an admin
+      let query = db.select().from(standups);
+
+      if (req.user?.role !== 'admin') {
+        // For team members, only show standups they're assigned to
+        const [teamMember] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.userId, req.user!.id));
+
+        if (!teamMember) {
+          return res.json({
+            items: [],
+            pagination: {
+              page,
+              pageSize,
+              totalItems: 0,
+              totalPages: 0,
+            },
+          });
+        }
+
+        const assignedStandupIds = await db
+          .select({ standupId: standupAssignments.standupId })
+          .from(standupAssignments)
+          .where(eq(standupAssignments.teamMemberId, teamMember.id));
+
+        if (assignedStandupIds.length === 0) {
+          return res.json({
+            items: [],
+            pagination: {
+              page,
+              pageSize,
+              totalItems: 0,
+              totalPages: 0,
+            },
+          });
+        }
+
+        query = query.where(
+          sql`${standups.id} IN (${sql.join(
+            assignedStandupIds.map(a => a.standupId)
+          )})`
+        );
+      } else {
+        // Admin sees all standups they created
+        query = query.where(eq(standups.userId, req.user!.id));
+      }
+
+      // Get total count
       const [count] = await db
         .select({ count: sql`count(*)::int` })
-        .from(standups)
-        .where(eq(standups.userId, req.user!.id));
+        .from(query.as('subquery'));
 
-      const items = await db
-        .select()
-        .from(standups)
-        .where(eq(standups.userId, req.user!.id))
+      // Get paginated results
+      const items = await query
         .orderBy(desc(standups.createdAt))
         .limit(pageSize)
         .offset(offset);
