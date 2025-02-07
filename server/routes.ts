@@ -101,7 +101,9 @@ export function registerRoutes(app: Express): Server {
 
       // If user is admin, return all team members
       if (req.user?.role === 'admin') {
-        const members = await storage.getTeamMembers();
+        const members = await db
+          .select()
+          .from(teamMembers);
         return res.json(members);
       }
 
