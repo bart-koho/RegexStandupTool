@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Standup, StandupAssignment, StandupResponse, TeamMember } from "@shared/schema";
-import TeamMemberList from "@/components/standups/team-member-list";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import Container from "@/components/layout/container";
@@ -54,34 +53,29 @@ export default function StandupPage({ params }: { params: { id: string } }) {
 
   return (
     <Container className="py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <a className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-5 w-5" />
-            </a>
-          </Link>
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">
-              Standup {standup.identifier}
-            </h1>
-            {standup.description && (
-              <p className="text-muted-foreground">
-                {standup.description}
-              </p>
-            )}
-          </div>
+      <div className="flex items-center gap-4">
+        <Link href="/">
+          <a className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </a>
+        </Link>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Standup {standup.identifier}
+          </h1>
+          {standup.description && (
+            <p className="text-muted-foreground">
+              {standup.description}
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="space-y-4">
         {canSubmitResponse && (
           <Card>
             <CardHeader>
               <CardTitle>Submit Your Update</CardTitle>
-              <CardDescription>
-                Share your daily progress with the team
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponseForm 
@@ -92,56 +86,37 @@ export default function StandupPage({ params }: { params: { id: string } }) {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Members</CardTitle>
-            <CardDescription>
-              Team members assigned to this standup and their response status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TeamMemberList standupId={standup.id} assignments={assignments || []} />
-          </CardContent>
-        </Card>
-
-        {assignments && assignments.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Responses</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {assignments.map((assignment) => {
-                const teamMember = teamMemberMap.get(assignment.teamMemberId);
-                return (
-                  <div
-                    key={assignment.id}
-                    className="p-4 border rounded-lg space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">
-                        {teamMember?.name}
-                      </div>
-                      <Badge
-                        variant={assignment.status === "completed" ? "default" : "secondary"}
-                        className={cn(
-                          assignment.status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-                          assignment.status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-                        )}
-                      >
-                        {assignment.status === "completed" ? "Responded" : "Pending"}
-                      </Badge>
-                    </div>
-                    {assignment.response && (
-                      <div className="text-sm mt-2">
-                        {(assignment.response as StandupResponse).response}
-                      </div>
-                    )}
+        <div className="space-y-4">
+          {assignments?.map((assignment) => {
+            const teamMember = teamMemberMap.get(assignment.teamMemberId);
+            return (
+              <div
+                key={assignment.id}
+                className="p-4 border rounded-lg space-y-2 bg-card"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">
+                    {teamMember?.name}
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
+                  <Badge
+                    variant={assignment.status === "completed" ? "default" : "secondary"}
+                    className={cn(
+                      assignment.status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+                      assignment.status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                    )}
+                  >
+                    {assignment.status === "completed" ? "Responded" : "Pending"}
+                  </Badge>
+                </div>
+                {assignment.response && (
+                  <div className="text-sm mt-2 text-muted-foreground">
+                    {(assignment.response as StandupResponse).response}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </Container>
   );
