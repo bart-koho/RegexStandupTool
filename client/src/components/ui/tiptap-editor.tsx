@@ -1,6 +1,15 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { cn } from "@/lib/utils"
+import { Toggle } from "@/components/ui/toggle"
+import { 
+  Bold, 
+  Italic, 
+  List, 
+  ListOrdered,
+  Code,
+  Quote
+} from 'lucide-react'
 
 export interface TiptapEditorProps {
   value: string
@@ -20,6 +29,7 @@ export function TiptapEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      // Add extensions for bold, italic, lists, code, and blockquote here.  StarterKit likely already includes some of these.
     ],
     content: value,
     editable: !disabled,
@@ -36,5 +46,57 @@ export function TiptapEditor({
     },
   })
 
-  return <EditorContent editor={editor} />
+  if (!editor) {
+    return null
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1 border rounded-md p-1">
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('bold')}
+          onPressedChange={() => editor.chain().focus().toggleBold().run()}
+        >
+          <Bold className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('italic')}
+          onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <Italic className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('bulletList')}
+          onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <List className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('orderedList')}
+          onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('code')}
+          onPressedChange={() => editor.chain().focus().toggleCode().run()}
+        >
+          <Code className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('blockquote')}
+          onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+        >
+          <Quote className="h-4 w-4" />
+        </Toggle>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  )
 }
