@@ -35,6 +35,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Container from "@/components/layout/container";
 import type { z } from "zod";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type FormData = z.infer<typeof insertTeamMemberSchema>;
 
@@ -172,7 +174,18 @@ export default function TeamPage() {
                 <User2 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-medium">{member.name}</h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-medium">{member.name}</h3>
+                  <Badge
+                    variant={member.active ? "default" : "secondary"}
+                    className={cn(
+                      member.active && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+                      !member.active && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                    )}
+                  >
+                    {member.active ? "Active" : "Pending"}
+                  </Badge>
+                </div>
                 <p className="text-sm text-muted-foreground">{member.email}</p>
               </div>
             </div>
