@@ -19,7 +19,7 @@ export async function sendActivationEmail(email: string, name: string, token: st
     await mailService.send({
       to: email,
       from: {
-        email: 'noreply@asyncstandup.com',
+        email: 'noreply@dazzlepony.com',
         name: 'Async Standup'
       },
       subject: 'Welcome to Async Standup - Activate Your Account',
