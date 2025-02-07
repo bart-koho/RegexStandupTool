@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, inArray } from 'drizzle-orm';
 import { db } from './db';
 
 export function registerRoutes(app: Express): Server {
@@ -184,8 +184,6 @@ export function registerRoutes(app: Express): Server {
       const offset = (page - 1) * pageSize;
 
       // First get the user's team member record if they're not an admin
-      let query = db.select().from(standups);
-
       if (req.user?.role !== 'admin') {
         // For team members, only show standups they're assigned to
         const [teamMember] = await db
@@ -205,12 +203,12 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
-        const assignedStandupIds = await db
+        const assignments = await db
           .select({ standupId: standupAssignments.standupId })
           .from(standupAssignments)
           .where(eq(standupAssignments.teamMemberId, teamMember.id));
 
-        if (assignedStandupIds.length === 0) {
+        if (assignments.length === 0) {
           return res.json({
             items: [],
             pagination: {
@@ -222,36 +220,57 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
-        query = query.where(
-          sql`${standups.id} IN (${sql.join(
-            assignedStandupIds.map(a => a.standupId)
-          )})`
-        );
+        const standupIds = assignments.map(a => a.standupId);
+
+        // Get total count first
+        const [countResult] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(standups)
+          .where(inArray(standups.id, standupIds));
+
+        // Then get the actual items
+        const items = await db
+          .select()
+          .from(standups)
+          .where(inArray(standups.id, standupIds))
+          .orderBy(desc(standups.createdAt))
+          .limit(pageSize)
+          .offset(offset);
+
+        return res.json({
+          items,
+          pagination: {
+            page,
+            pageSize,
+            totalItems: countResult.count,
+            totalPages: Math.ceil(countResult.count / pageSize),
+          },
+        });
       } else {
         // Admin sees all standups they created
-        query = query.where(eq(standups.userId, req.user!.id));
+        const [countResult] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(standups)
+          .where(eq(standups.userId, req.user!.id));
+
+        const items = await db
+          .select()
+          .from(standups)
+          .where(eq(standups.userId, req.user!.id))
+          .orderBy(desc(standups.createdAt))
+          .limit(pageSize)
+          .offset(offset);
+
+        return res.json({
+          items,
+          pagination: {
+            page,
+            pageSize,
+            totalItems: countResult.count,
+            totalPages: Math.ceil(countResult.count / pageSize),
+          },
+        });
       }
-
-      // Get total count
-      const [count] = await db
-        .select({ count: sql`count(*)::int` })
-        .from(query.as('subquery'));
-
-      // Get paginated results
-      const items = await query
-        .orderBy(desc(standups.createdAt))
-        .limit(pageSize)
-        .offset(offset);
-
-      res.json({
-        items,
-        pagination: {
-          page,
-          pageSize,
-          totalItems: count.count,
-          totalPages: Math.ceil(count.count / pageSize),
-        },
-      });
     } catch (error) {
       console.error('Error fetching standups:', error);
       res.status(500).json({ message: 'Failed to fetch standups' });
