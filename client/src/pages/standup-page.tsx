@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Standup, StandupAssignment, StandupResponse } from "@shared/schema";
+import { Standup, StandupAssignment, StandupResponse, TeamMember } from "@shared/schema";
 import TeamMemberList from "@/components/standups/team-member-list";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import Container from "@/components/layout/container";
+import { Separator } from "@/components/ui/separator";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { data: standup, isLoading: loadingStandup } = useQuery<Standup>({
@@ -35,13 +36,30 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             <ArrowLeft className="h-5 w-5" />
           </a>
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Standup {standup.identifier}
-        </h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Standup {standup.identifier}
+          </h1>
+          {standup.description && (
+            <p className="text-muted-foreground">
+              {standup.description}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6">
-        <TeamMemberList standupId={standup.id} assignments={assignments || []} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Members</CardTitle>
+            <CardDescription>
+              Team members assigned to this standup and their response status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TeamMemberList standupId={standup.id} assignments={assignments || []} />
+          </CardContent>
+        </Card>
 
         {assignments && assignments.length > 0 && (
           <Card>
@@ -64,10 +82,12 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                         {(assignment.response as StandupResponse).accomplishments}
                       </p>
                       <p>
-                        <strong>Blockers:</strong> {(assignment.response as StandupResponse).blockers}
+                        <strong>Blockers:</strong>{" "}
+                        {(assignment.response as StandupResponse).blockers}
                       </p>
                       <p>
-                        <strong>Plans:</strong> {(assignment.response as StandupResponse).plans}
+                        <strong>Plans:</strong>{" "}
+                        {(assignment.response as StandupResponse).plans}
                       </p>
                       {(assignment.response as StandupResponse).help && (
                         <p>

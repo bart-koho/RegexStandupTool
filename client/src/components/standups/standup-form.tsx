@@ -160,20 +160,6 @@ export default function StandupForm({
           )}
         </div>
 
-        <FormField
-          control={form.control}
-          name="identifier"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Standup Identifier</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="YYYY-MM-DD-#NNN" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <Button
           type="submit"
           className="w-full"
