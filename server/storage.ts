@@ -86,7 +86,7 @@ export class DatabaseStorage implements IStorage {
         name: member.name,
         email: member.email,
         userId,
-        active: false, 
+        active: false,
       })
       .returning();
     return teamMember;
@@ -161,6 +161,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(standupAssignments.responseUrl, responseUrl))
       .returning();
     return assignment;
+  }
+
+  async deleteTeamMember(id: number): Promise<void> {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
   }
 }
 

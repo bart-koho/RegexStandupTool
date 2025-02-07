@@ -17,6 +17,7 @@ export interface IStorage {
     userId: number,
     member: Omit<TeamMember, "id" | "userId" | "active">,
   ): Promise<TeamMember>;
+  deleteTeamMember(id: number): Promise<void>;
   getTeamMembers(userId: number): Promise<TeamMember[]>;
   createStandup(
     userId: number,

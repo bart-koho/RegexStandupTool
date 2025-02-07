@@ -9,6 +9,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -19,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, User2, Loader2 } from "lucide-react";
+import { Plus, User2, Loader2, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Container from "@/components/layout/container";
@@ -52,6 +63,26 @@ export default function TeamPage() {
       toast({
         title: "Success",
         description: "Team member added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/team-members/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
+      toast({
+        title: "Success",
+        description: "Team member deleted successfully",
       });
     },
     onError: (error: Error) => {
@@ -134,15 +165,41 @@ export default function TeamPage() {
         {members?.map((member) => (
           <div
             key={member.id}
-            className="flex items-center space-x-4 p-4 border rounded-lg"
+            className="flex items-center justify-between p-4 border rounded-lg"
           >
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User2 className="h-5 w-5 text-primary" />
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium">{member.name}</h3>
+                <p className="text-sm text-muted-foreground">{member.email}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-medium">{member.name}</h3>
-              <p className="text-sm text-muted-foreground">{member.email}</p>
-            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Team Member</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {member.name}? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteMutation.mutate(member.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
 

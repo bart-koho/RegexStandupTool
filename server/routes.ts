@@ -63,6 +63,19 @@ export function registerRoutes(app: Express): Server {
     res.json(members);
   });
 
+  app.delete("/api/team-members/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user?.role !== 'admin') return res.sendStatus(403);
+
+    try {
+      await storage.deleteTeamMember(parseInt(req.params.id));
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting team member:', error);
+      res.status(500).json({ message: 'Failed to delete team member' });
+    }
+  });
+
   // Add activation endpoint
   app.post("/api/activate", async (req, res) => {
     const { token, password } = req.body;
