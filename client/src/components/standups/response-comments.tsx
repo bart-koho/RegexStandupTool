@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Card } from "@/components/ui/card";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -83,47 +84,49 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
         </Button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="space-y-4">
+      <CollapsibleContent>
         {isLoading ? (
           <div className="flex justify-center py-2">
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
         ) : (
-          <>
-            <div className="space-y-3">
-              {comments.map(({ comment, user }) => (
-                <div key={comment.id} className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">{user.username}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                    </span>
+          <Card className="p-4">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {comments.map(({ comment, user }) => (
+                  <div key={comment.id} className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">{user.username}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{comment.content}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{comment.content}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <Input
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 h-8 text-sm"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="h-8"
-                disabled={!content.trim() || commentMutation.isPending}
-              >
-                {commentMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Send
-              </Button>
-            </form>
-          </>
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <Input
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="flex-1 h-8 text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-8"
+                  disabled={!content.trim() || commentMutation.isPending}
+                >
+                  {commentMutation.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  Send
+                </Button>
+              </form>
+            </div>
+          </Card>
         )}
       </CollapsibleContent>
     </Collapsible>
