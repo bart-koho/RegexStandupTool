@@ -8,7 +8,10 @@ import {
   List, 
   ListOrdered,
   Code,
-  Quote
+  Quote,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from 'lucide-react'
 
 export interface TiptapEditorProps {
@@ -28,16 +31,38 @@ export function TiptapEditor({
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      // Add extensions for bold, italic, lists, code, and blockquote here.  StarterKit likely already includes some of these.
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        code: {
+          HTMLAttributes: {
+            class: 'rounded-md bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold',
+          },
+        },
+        blockquote: {
+          HTMLAttributes: {
+            class: 'border-l-2 pl-4 italic',
+          },
+        },
+        heading: false,
+        horizontalRule: false,
+        dropcursor: false,
+        gapcursor: false,
+      }),
     ],
     content: value,
     editable: !disabled,
     editorProps: {
       attributes: {
         class: cn(
-          'min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          className
+          'prose prose-sm max-w-none focus:outline-none min-h-[150px]',
+          disabled && 'cursor-not-allowed opacity-60',
         ),
       },
     },
@@ -51,12 +76,13 @@ export function TiptapEditor({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1 border rounded-md p-1">
+    <div className={cn('rounded-lg border bg-card', className)}>
+      <div className="flex flex-wrap gap-1 border-b bg-muted/50 p-1">
         <Toggle
           size="sm"
           pressed={editor.isActive('bold')}
           onPressedChange={() => editor.chain().focus().toggleBold().run()}
+          className="data-[state=on]:bg-muted"
         >
           <Bold className="h-4 w-4" />
         </Toggle>
@@ -64,6 +90,7 @@ export function TiptapEditor({
           size="sm"
           pressed={editor.isActive('italic')}
           onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+          className="data-[state=on]:bg-muted"
         >
           <Italic className="h-4 w-4" />
         </Toggle>
@@ -71,6 +98,7 @@ export function TiptapEditor({
           size="sm"
           pressed={editor.isActive('bulletList')}
           onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+          className="data-[state=on]:bg-muted"
         >
           <List className="h-4 w-4" />
         </Toggle>
@@ -78,6 +106,7 @@ export function TiptapEditor({
           size="sm"
           pressed={editor.isActive('orderedList')}
           onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+          className="data-[state=on]:bg-muted"
         >
           <ListOrdered className="h-4 w-4" />
         </Toggle>
@@ -85,6 +114,7 @@ export function TiptapEditor({
           size="sm"
           pressed={editor.isActive('code')}
           onPressedChange={() => editor.chain().focus().toggleCode().run()}
+          className="data-[state=on]:bg-muted"
         >
           <Code className="h-4 w-4" />
         </Toggle>
@@ -92,11 +122,19 @@ export function TiptapEditor({
           size="sm"
           pressed={editor.isActive('blockquote')}
           onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+          className="data-[state=on]:bg-muted"
         >
           <Quote className="h-4 w-4" />
         </Toggle>
       </div>
-      <EditorContent editor={editor} />
+      <div className="relative p-3">
+        <EditorContent editor={editor} />
+        {editor.isEmpty && placeholder && (
+          <div className="absolute top-[calc(0.75rem)] left-[calc(0.75rem)] text-muted-foreground pointer-events-none">
+            {placeholder}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
