@@ -23,7 +23,7 @@ export default function MobileNav() {
               )}
             >
               <Home className="h-5 w-5" />
-              <span>Home</span>
+              <span>Standups</span>
             </a>
           </Link>
           <Link href="/team">

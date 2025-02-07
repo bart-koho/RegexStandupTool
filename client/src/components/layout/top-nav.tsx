@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Users } from "lucide-react";
+import { Users, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,16 @@ export default function TopNav() {
     <nav className="border-b bg-background">
       <div className="container max-w-4xl mx-auto py-4">
         <div className="flex justify-end gap-4">
+          <Link href="/">
+            <Button 
+              variant={isActive("/") ? "default" : "ghost"}
+              size="sm"
+              className="gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Standups
+            </Button>
+          </Link>
           <Link href="/team">
             <Button 
               variant={isActive("/team") ? "default" : "ghost"}
