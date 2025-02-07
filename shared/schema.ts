@@ -39,10 +39,18 @@ export const standupAssignments = pgTable("standup_assignments", {
   response: json("response").default(null),
 });
 
-// Relations remain unchanged
+export const standupReactions = pgTable("standup_reactions", {
+  id: serial("id").primaryKey(),
+  assignmentId: integer("assignment_id").notNull().references(() => standupAssignments.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   standups: many(standups),
+  reactions: many(standupReactions),
 }));
 
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
@@ -60,7 +68,7 @@ export const standupsRelations = relations(standups, ({ one, many }) => ({
   assignments: many(standupAssignments),
 }));
 
-export const standupAssignmentsRelations = relations(standupAssignments, ({ one }) => ({
+export const standupAssignmentsRelations = relations(standupAssignments, ({ one, many }) => ({
   standup: one(standups, {
     fields: [standupAssignments.standupId],
     references: [standups.id],
@@ -69,6 +77,7 @@ export const standupAssignmentsRelations = relations(standupAssignments, ({ one 
     fields: [standupAssignments.teamMemberId],
     references: [teamMembers.id],
   }),
+  reactions: many(standupReactions),
 }));
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -87,7 +96,6 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers)
     email: z.string().email(),
   });
 
-// Remove identifier requirement from insert schema since it's generated server-side
 export const insertStandupSchema = z.object({
   description: z.string().optional(),
 });
@@ -96,6 +104,12 @@ export const responseSchema = z.object({
   response: z.string().min(1, "Please provide your update"),
 });
 
+export const insertReactionSchema = createInsertSchema(standupReactions)
+  .pick({
+    assignmentId: true,
+    emoji: true,
+  });
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type User = typeof users.$inferSelect;
@@ -103,3 +117,5 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 export type Standup = typeof standups.$inferSelect;
 export type StandupAssignment = typeof standupAssignments.$inferSelect;
 export type StandupResponse = z.infer<typeof responseSchema>;
+export type InsertReaction = z.infer<typeof insertReactionSchema>;
+export type StandupReaction = typeof standupReactions.$inferSelect;

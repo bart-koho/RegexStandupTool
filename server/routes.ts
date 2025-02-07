@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments } from "@shared/schema";
+import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments, insertReactionSchema, standupReactions } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
-import { eq, desc, sql, inArray } from 'drizzle-orm';
+import { eq, desc, sql, inArray, and } from 'drizzle-orm';
 import { db } from './db';
 
 export function registerRoutes(app: Express): Server {
@@ -302,6 +302,86 @@ export function registerRoutes(app: Express): Server {
     }
 
     res.json(assignment[0]);
+  });
+
+  // Add reaction to a standup response
+  app.post("/api/responses/:id/reactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const parsed = insertReactionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json(parsed.error);
+    }
+
+    try {
+      // Check if user already reacted with this emoji
+      const existingReaction = await db
+        .select()
+        .from(standupReactions)
+        .where(
+          and(
+            eq(standupReactions.assignmentId, parseInt(req.params.id)),
+            eq(standupReactions.userId, req.user!.id),
+            eq(standupReactions.emoji, parsed.data.emoji)
+          )
+        );
+
+      if (existingReaction.length > 0) {
+        // If reaction exists, remove it (toggle behavior)
+        await db
+          .delete(standupReactions)
+          .where(eq(standupReactions.id, existingReaction[0].id));
+        return res.json({ removed: true });
+      }
+
+      // Add new reaction
+      const [reaction] = await db
+        .insert(standupReactions)
+        .values({
+          assignmentId: parseInt(req.params.id),
+          userId: req.user!.id,
+          emoji: parsed.data.emoji,
+        })
+        .returning();
+
+      res.status(201).json(reaction);
+    } catch (error) {
+      console.error('Error managing reaction:', error);
+      res.status(500).json({ message: 'Failed to manage reaction' });
+    }
+  });
+
+  // Get reactions for a standup response
+  app.get("/api/responses/:id/reactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const reactions = await db
+        .select({
+          reaction: standupReactions,
+          user: {
+            id: users.id,
+            username: users.username,
+          },
+        })
+        .from(standupReactions)
+        .innerJoin(users, eq(users.id, standupReactions.userId))
+        .where(eq(standupReactions.assignmentId, parseInt(req.params.id)));
+
+      // Group reactions by emoji
+      const groupedReactions = reactions.reduce((acc, { reaction, user }) => {
+        if (!acc[reaction.emoji]) {
+          acc[reaction.emoji] = [];
+        }
+        acc[reaction.emoji].push(user);
+        return acc;
+      }, {} as Record<string, typeof reactions[0]['user'][]>);
+
+      res.json(groupedReactions);
+    } catch (error) {
+      console.error('Error fetching reactions:', error);
+      res.status(500).json({ message: 'Failed to fetch reactions' });
+    }
   });
 
   const httpServer = createServer(app);

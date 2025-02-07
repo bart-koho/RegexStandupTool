@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
 import ResponseForm from "@/components/standups/response-form";
+import { ResponseReactions } from "@/components/standups/response-reactions";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import InviteMembersDialog from "@/components/standups/invite-members-dialog";
@@ -151,26 +152,36 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                 </div>
 
                 {assignment.status === "completed" && (
-                  isEditing ? (
-                    <div className="mt-4">
-                      <ResponseForm
-                        responseUrl={assignment.responseUrl}
-                        standupId={standup.id}
-                        initialResponse={response.response}
-                        mode="edit"
-                        onSuccess={() => setEditingResponseId(null)}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="text-sm mt-2 text-muted-foreground prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: response.response }}
-                    />
-                  )
+                  <>
+                    {isEditing ? (
+                      <div className="mt-4">
+                        <ResponseForm
+                          responseUrl={assignment.responseUrl}
+                          standupId={standup.id}
+                          initialResponse={response.response}
+                          mode="edit"
+                          onSuccess={() => setEditingResponseId(null)}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className="text-sm mt-2 text-muted-foreground prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: response.response }}
+                        />
+                        <ResponseReactions assignmentId={assignment.id} />
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             );
           })}
+          {(!assignments || assignments.length === 0) && (
+            <div className="text-center py-4 text-muted-foreground">
+              No responses yet.
+            </div>
+          )}
         </div>
       </div>
     </Container>
