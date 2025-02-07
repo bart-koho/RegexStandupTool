@@ -8,35 +8,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Plus, ArrowRight, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
+import StandupForm from "@/components/standups/standup-form";
+import { useState } from "react";
 
 export default function HomePage() {
-  const { toast } = useToast();
   const [_, setLocation] = useLocation();
   const { user } = useAuth();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: standups, isLoading } = useQuery<Standup[]>({
     queryKey: ["/api/standups"],
   });
-
-  const createStandup = async () => {
-    try {
-      const res = await apiRequest("POST", "/api/standups");
-      const standup = await res.json();
-      setLocation(`/standup/${standup.id}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create standup",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -51,10 +44,25 @@ export default function HomePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Standups</h1>
         {user?.role === 'admin' && (
-          <Button onClick={createStandup}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Standup
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Standup
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Standup</DialogTitle>
+              </DialogHeader>
+              <StandupForm 
+                onSuccess={(standup) => {
+                  setDialogOpen(false);
+                  setLocation(`/standup/${standup.id}`);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
@@ -73,6 +81,11 @@ export default function HomePage() {
                   Created on{" "}
                   {new Date(standup.createdAt).toLocaleDateString()}
                 </CardDescription>
+                {standup.description && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {standup.description}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </Link>

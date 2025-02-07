@@ -113,13 +113,29 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/standups", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user?.role !== 'admin') return res.sendStatus(403);
 
-    const date = new Date().toISOString().split("T")[0];
-    const standups = await storage.getStandupsByUser(req.user!.id);
-    const identifier = `${date}-#${(standups.length + 1).toString().padStart(3, "0")}`;
+    try {
+      const date = new Date().toISOString().split("T")[0];
+      const standups = await storage.getStandupsByUser(req.user!.id);
+      const identifier = `${date}-#${(standups.length + 1).toString().padStart(3, "0")}`;
 
-    const standup = await storage.createStandup(req.user!.id, { identifier });
-    res.status(201).json(standup);
+      // Create the standup with description
+      const standup = await storage.createStandup(req.user!.id, { 
+        identifier,
+        description: req.body.description || null
+      });
+
+      // If team members were specified, assign them immediately
+      if (req.body.teamMemberIds && Array.isArray(req.body.teamMemberIds)) {
+        await storage.assignTeamMembers(standup.id, req.body.teamMemberIds);
+      }
+
+      res.status(201).json(standup);
+    } catch (error) {
+      console.error('Error creating standup:', error);
+      res.status(500).json({ message: 'Failed to create standup' });
+    }
   });
 
   app.post("/api/standups/:id/assign", async (req, res) => {
