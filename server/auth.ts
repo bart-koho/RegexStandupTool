@@ -28,6 +28,29 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+export async function createInitialAdminUser() {
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.log("No admin credentials provided, skipping initial admin creation");
+    return;
+  }
+
+  const existingAdmin = await storage.getUserByUsername(adminUsername);
+  if (existingAdmin) {
+    console.log("Admin user already exists");
+    return;
+  }
+
+  const hashedPassword = await hashPassword(adminPassword);
+  await storage.createUser({
+    username: adminUsername,
+    password: hashedPassword,
+  });
+  console.log("Initial admin user created successfully");
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID!,
@@ -61,22 +84,6 @@ export function setupAuth(app: Express) {
     done(null, user);
   });
 
-  app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
-    }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
-  });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
