@@ -41,6 +41,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async createUser(insertUser: Partial<InsertUser> & { activationToken?: string }): Promise<User> {
     const [user] = await db.insert(users).values({
       username: insertUser.username!,
@@ -185,11 +190,22 @@ export class DatabaseStorage implements IStorage {
           throw new Error('Cannot delete admin user');
         }
 
-        // Delete the team member first (due to foreign key constraint)
-        await db.delete(teamMembers).where(eq(teamMembers.id, id));
+        // Delete all standup assignments for this team member
+        await db
+          .delete(standupAssignments)
+          .where(eq(standupAssignments.teamMemberId, id));
 
-        // Then delete the associated user only if they're not an admin
-        await db.delete(users).where(eq(users.id, teamMember.userId));
+        // Delete the team member record
+        await db
+          .delete(teamMembers)
+          .where(eq(teamMembers.id, id));
+
+        // Finally delete the associated user if they're not an admin
+        if (user && user.role !== 'admin') {
+          await db
+            .delete(users)
+            .where(eq(users.id, teamMember.userId));
+        }
       }
     } catch (error) {
       console.error('Error deleting team member:', error);

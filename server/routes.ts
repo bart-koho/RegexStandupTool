@@ -22,11 +22,8 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Check if user with email already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, parsed.data.email));
+      // Check if user with email OR username already exists
+      const existingUser = await storage.getUserByEmail(parsed.data.email);
 
       if (existingUser) {
         return res.status(400).json({ 
