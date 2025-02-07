@@ -215,16 +215,36 @@ export function registerRoutes(app: Express): Server {
         .select({ count: sql<number>`count(*)::int` })
         .from(standups);
 
-      // Then get the actual items
+      // Get standups with their assignment stats
       const items = await db
-        .select()
+        .select({
+          standup: standups,
+          stats: sql<{ totalAssignments: number; completedResponses: number }>`
+            json_build_object(
+              'totalAssignments', (
+                SELECT COUNT(*)::int 
+                FROM ${standupAssignments} 
+                WHERE ${standupAssignments.standupId} = ${standups.id}
+              ),
+              'completedResponses', (
+                SELECT COUNT(*)::int 
+                FROM ${standupAssignments} 
+                WHERE ${standupAssignments.standupId} = ${standups.id} 
+                AND ${standupAssignments.status} = 'completed'
+              )
+            )
+          `
+        })
         .from(standups)
         .orderBy(desc(standups.createdAt))
         .limit(pageSize)
         .offset(offset);
 
       return res.json({
-        items,
+        items: items.map(item => ({
+          ...item.standup,
+          stats: item.stats
+        })),
         pagination: {
           page,
           pageSize,

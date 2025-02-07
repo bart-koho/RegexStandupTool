@@ -21,9 +21,15 @@ import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
 import StandupForm from "@/components/standups/standup-form";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface StandupResponse {
-  items: Standup[];
+  items: (Standup & {
+    stats: {
+      totalAssignments: number;
+      completedResponses: number;
+    };
+  })[];
   pagination: {
     page: number;
     pageSize: number;
@@ -88,7 +94,12 @@ export default function HomePage() {
                 <CardTitle className="text-lg font-medium">
                   {standup.identifier}
                 </CardTitle>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-4">
+                  <Badge variant="secondary" className="font-mono">
+                    {standup.stats.completedResponses} / {standup.stats.totalAssignments}
+                  </Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </div>
               </CardHeader>
               <CardContent>
                 <CardDescription>
