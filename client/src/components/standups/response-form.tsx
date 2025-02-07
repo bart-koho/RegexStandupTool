@@ -30,7 +30,7 @@ export default function ResponseForm({
   const { toast } = useToast();
   const [fire, setFire] = useState(false);
 
-  // Confetti configuration and handler
+  // Confetti configuration
   const onConfettiComplete = useCallback(() => {
     setFire(false);
   }, []);
@@ -38,10 +38,17 @@ export default function ResponseForm({
   const confettiProps = {
     fire,
     onDecay: onConfettiComplete,
-    className: "fixed top-0 left-0 w-full h-full pointer-events-none z-50",
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 }
+    className: "fixed inset-0 w-full h-full pointer-events-none z-[9999]",
+    colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'],
+    particleCount: 150,
+    spread: 90,
+    origin: { y: 0, x: 0.5 },
+    gravity: 0.7,
+    scalar: 1.2,
+    startVelocity: 45,
+    ticks: 200,
+    shapes: ['circle', 'square'],
+    zIndex: 9999,
   };
 
   const form = useForm<StandupResponse>({
@@ -61,8 +68,8 @@ export default function ResponseForm({
         title: "Success",
         description: "Your response has been submitted",
       });
-      // Trigger confetti
-      setFire(true);
+      // Trigger confetti with a slight delay to ensure DOM updates are complete
+      setTimeout(() => setFire(true), 100);
       // Invalidate relevant queries to update the UI
       queryClient.invalidateQueries({ queryKey: [`/api/standups/${standupId}/assignments`] });
       onSuccess?.();
