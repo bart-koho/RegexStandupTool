@@ -20,7 +20,9 @@ function Router() {
       <Route path="/activate/:token" component={ActivatePage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/team" component={TeamPage} />
-      <ProtectedRoute path="/standup/:id" component={StandupPage} />
+      <Route path="/standup/:id">
+        {(params) => <ProtectedRoute path="/standup/:id" component={() => <StandupPage params={params} />} />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
