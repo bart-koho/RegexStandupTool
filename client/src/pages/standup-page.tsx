@@ -28,7 +28,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     queryKey: ["/api/team-members", { standupId: params.id }],
   });
 
-  // For non-admin users, also get their own team member record
+  // For non-admin users, also get their own team member record to check if they can submit
   const { data: userTeamMembers } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
     enabled: !!user && user.role !== 'admin',
@@ -42,7 +42,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!standup || !teamMembers) return null;
+  if (!standup || !assignments || !teamMembers) return null;
 
   // Find the current user's assignment if they have one
   const userTeamMember = userTeamMembers?.[0];
@@ -72,7 +72,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
-        {user?.role === 'admin' && assignments && (
+        {user?.role === 'admin' && (
           <InviteMembersDialog 
             standupId={standup.id} 
             currentAssignments={assignments}
@@ -88,7 +88,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <ResponseForm 
-                responseUrl={userAssignment?.responseUrl}
+                responseUrl={userAssignment.responseUrl}
                 standupId={standup.id}
               />
             </CardContent>
@@ -96,8 +96,10 @@ export default function StandupPage({ params }: { params: { id: string } }) {
         )}
 
         <div className="space-y-4">
-          {assignments?.map((assignment) => {
+          {assignments.map((assignment) => {
             const teamMember = teamMemberMap.get(assignment.teamMemberId);
+            if (!teamMember) return null;
+
             return (
               <div
                 key={assignment.id}
@@ -105,7 +107,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
               >
                 <div className="flex items-center justify-between">
                   <div className="font-medium">
-                    {teamMember?.name}
+                    {teamMember.name}
                   </div>
                   <Badge
                     variant={assignment.status === "completed" ? "default" : "secondary"}
@@ -117,7 +119,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                     {assignment.status === "completed" ? "Responded" : "Pending"}
                   </Badge>
                 </div>
-                {assignment.response && (
+                {assignment.status === "completed" && assignment.response && (
                   <div className="text-sm mt-2 text-muted-foreground">
                     {(assignment.response as StandupResponse).response}
                   </div>
