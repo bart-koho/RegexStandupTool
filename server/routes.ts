@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertTeamMemberSchema, responseSchema, users, standups } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
-import { eq } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { db } from './db';
 
 export function registerRoutes(app: Express): Server {
@@ -177,8 +177,38 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/standups", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const standups = await storage.getStandupsByUser(req.user!.id);
-    res.json(standups);
+
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = 25;
+      const offset = (page - 1) * pageSize;
+
+      const [count] = await db
+        .select({ count: sql`count(*)::int` })
+        .from(standups)
+        .where(eq(standups.userId, req.user!.id));
+
+      const items = await db
+        .select()
+        .from(standups)
+        .where(eq(standups.userId, req.user!.id))
+        .orderBy(desc(standups.createdAt))
+        .limit(pageSize)
+        .offset(offset);
+
+      res.json({
+        items,
+        pagination: {
+          page,
+          pageSize,
+          totalItems: count.count,
+          totalPages: Math.ceil(count.count / pageSize),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching standups:', error);
+      res.status(500).json({ message: 'Failed to fetch standups' });
+    }
   });
 
   app.get("/api/standups/:id/assignments", async (req, res) => {

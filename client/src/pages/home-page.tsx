@@ -15,20 +15,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, ArrowRight, Loader2 } from "lucide-react";
+import { Plus, ArrowRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
 import StandupForm from "@/components/standups/standup-form";
 import { useState } from "react";
 
+interface StandupResponse {
+  items: Standup[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
 export default function HomePage() {
   const [_, setLocation] = useLocation();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const { data: standups, isLoading } = useQuery<Standup[]>({
-    queryKey: ["/api/standups"],
+  const { data: standupData, isLoading } = useQuery<StandupResponse>({
+    queryKey: ["/api/standups", page],
   });
 
   if (isLoading) {
@@ -38,6 +49,9 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const standups = standupData?.items || [];
+  const pagination = standupData?.pagination;
 
   return (
     <Container className="py-6 space-y-6">
@@ -104,6 +118,32 @@ export default function HomePage() {
           </Card>
         )}
       </div>
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+              disabled={page === pagination.totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </Container>
   );
 }
