@@ -34,7 +34,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   // Get current user's team member record
   const { data: userTeamMember } = useQuery<TeamMember>({
     queryKey: ["/api/team-members"],
-    select: (members: TeamMember[]) => 
+    select: (members: TeamMember[]) =>
       members.find(member => member.email === user?.email),
     enabled: !!user,
   });
@@ -50,7 +50,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   if (!standup || !assignments || !teamMembers) return null;
 
   // Find the current user's assignment if they have one
-  const userAssignment = userTeamMember 
+  const userAssignment = userTeamMember
     ? assignments.find(a => a.teamMemberId === userTeamMember.id)
     : undefined;
 
@@ -85,8 +85,8 @@ export default function StandupPage({ params }: { params: { id: string } }) {
           </div>
         </div>
         {user?.role === 'admin' && (
-          <InviteMembersDialog 
-            standupId={standup.id} 
+          <InviteMembersDialog
+            standupId={standup.id}
             currentAssignments={assignments}
           />
         )}
@@ -99,7 +99,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
               <CardTitle>Submit Your Update</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponseForm 
+              <ResponseForm
                 responseUrl={userAssignment.responseUrl}
                 standupId={standup.id}
               />
@@ -153,7 +153,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                 {assignment.status === "completed" && (
                   isEditing ? (
                     <div className="mt-4">
-                      <ResponseForm 
+                      <ResponseForm
                         responseUrl={assignment.responseUrl}
                         standupId={standup.id}
                         initialResponse={response.response}
@@ -162,9 +162,10 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                       />
                     </div>
                   ) : (
-                    <div className="text-sm mt-2 text-muted-foreground">
-                      {response.response}
-                    </div>
+                    <div
+                      className="text-sm mt-2 text-muted-foreground prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: response.response }}
+                    />
                   )
                 )}
               </div>

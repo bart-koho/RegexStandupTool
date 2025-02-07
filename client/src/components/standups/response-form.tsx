@@ -10,12 +10,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import confetti from 'canvas-confetti';
+import { TiptapEditor } from "@/components/ui/tiptap-editor";
 
 export default function ResponseForm({
   responseUrl,
@@ -90,8 +90,8 @@ export default function ResponseForm({
             <FormItem>
               <FormLabel>Daily Update</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <TiptapEditor
+                  {...field}
                   placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
                   className="min-h-[150px]"
                 />
