@@ -28,10 +28,12 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     queryKey: ["/api/team-members", { standupId: params.id }],
   });
 
-  // For non-admin users, get their own team member record to check if they can submit
-  const { data: userTeamMembers } = useQuery<TeamMember[]>({
+  // Get current user's team member record
+  const { data: userTeamMember } = useQuery<TeamMember>({
     queryKey: ["/api/team-members"],
-    enabled: !!user && user.role !== 'admin',
+    select: (members: TeamMember[]) => 
+      members.find(member => member.email === user?.email),
+    enabled: !!user,
   });
 
   if (loadingStandup || loadingAssignments || loadingTeamMembers) {
@@ -45,7 +47,6 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   if (!standup || !assignments || !teamMembers) return null;
 
   // Find the current user's assignment if they have one
-  const userTeamMember = userTeamMembers?.[0];
   const userAssignment = userTeamMember 
     ? assignments.find(a => a.teamMemberId === userTeamMember.id)
     : undefined;
