@@ -35,7 +35,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-1 p-1 border-b bg-muted/50">
+    <div className="control-group flex flex-wrap gap-1 p-1 border-b bg-muted/50">
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -197,7 +197,20 @@ export function TiptapEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm max-w-none focus:outline-none min-h-[150px] px-3 py-2',
+          'tiptap prose prose-sm max-w-none focus:outline-none min-h-[150px] px-3 py-2',
+          '[&>*:first-child]:mt-0',
+          '[&_ul]:pl-4 [&_ul]:my-5 [&_ul]:ml-1.5',
+          '[&_ol]:pl-4 [&_ol]:my-5 [&_ol]:ml-1.5',
+          '[&_li_p]:my-1',
+          '[&_h1]:text-[1.4rem] [&_h1]:leading-tight [&_h1]:mt-14 [&_h1]:mb-6',
+          '[&_h2]:text-[1.2rem] [&_h2]:leading-tight [&_h2]:mt-14 [&_h2]:mb-6',
+          '[&_h3]:text-[1.1rem] [&_h3]:leading-tight [&_h3]:mt-10',
+          '[&_h4,&_h5,&_h6]:text-base [&_h4,&_h5,&_h6]:leading-tight [&_h4,&_h5,&_h6]:mt-10',
+          '[&_code]:bg-muted [&_code]:rounded-md [&_code]:px-1.5 [&_code]:py-1 [&_code]:text-sm',
+          '[&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:my-6 [&_pre]:p-4',
+          '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-sm',
+          '[&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/20 [&_blockquote]:pl-4 [&_blockquote]:my-6 [&_blockquote]:italic',
+          '[&_hr]:border-0 [&_hr]:border-t [&_hr]:border-muted-foreground/20 [&_hr]:my-8',
           disabled && 'cursor-not-allowed opacity-60',
         ),
       },
