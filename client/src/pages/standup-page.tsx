@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ResponseForm from "@/components/standups/response-form";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import InviteMembersDialog from "@/components/standups/invite-members-dialog";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -53,22 +54,30 @@ export default function StandupPage({ params }: { params: { id: string } }) {
 
   return (
     <Container className="py-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/">
-          <a className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </a>
-        </Link>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Standup {standup.identifier}
-          </h1>
-          {standup.description && (
-            <p className="text-muted-foreground">
-              {standup.description}
-            </p>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <a className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </a>
+          </Link>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Standup {standup.identifier}
+            </h1>
+            {standup.description && (
+              <p className="text-muted-foreground">
+                {standup.description}
+              </p>
+            )}
+          </div>
         </div>
+        {user?.role === 'admin' && assignments && (
+          <InviteMembersDialog 
+            standupId={standup.id} 
+            currentAssignments={assignments}
+          />
+        )}
       </div>
 
       <div className="space-y-4">
