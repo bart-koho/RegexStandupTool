@@ -222,14 +222,14 @@ export function registerRoutes(app: Express): Server {
           stats: sql<{ totalAssignments: number; completedResponses: number }>`
             json_build_object(
               'totalAssignments', (
-                SELECT COUNT(*)::int 
-                FROM ${standupAssignments} sa
-                WHERE sa.standup_id = ${standups.id}
+                SELECT COUNT(DISTINCT team_member_id)::int 
+                FROM standup_assignments sa
+                WHERE sa.standup_id = standups.id
               ),
               'completedResponses', (
                 SELECT COUNT(*)::int 
-                FROM ${standupAssignments} sa
-                WHERE sa.standup_id = ${standups.id} 
+                FROM standup_assignments sa
+                WHERE sa.standup_id = standups.id 
                 AND sa.status = 'completed'
               )
             )
