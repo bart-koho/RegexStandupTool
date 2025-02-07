@@ -90,6 +90,20 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
           </div>
         ) : (
           <>
+            <div className="space-y-3">
+              {comments.map(({ comment, user }) => (
+                <div key={comment.id} className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">{user.username}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{comment.content}</p>
+                </div>
+              ))}
+            </div>
+
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
                 value={content}
@@ -109,20 +123,6 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
                 Send
               </Button>
             </form>
-
-            <div className="space-y-3">
-              {comments.map(({ comment, user }) => (
-                <div key={comment.id} className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">{user.username}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{comment.content}</p>
-                </div>
-              ))}
-            </div>
           </>
         )}
       </CollapsibleContent>
