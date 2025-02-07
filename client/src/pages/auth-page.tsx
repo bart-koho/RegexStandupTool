@@ -39,9 +39,17 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      <div className="flex flex-1 items-center justify-center px-8 py-12">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Welcome Back
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Login to manage your team standups
+            </p>
+          </div>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((data) => loginMutation.mutate(data))}
@@ -84,14 +92,14 @@ export default function AuthPage() {
           </Form>
         </div>
       </div>
-      <div className="hidden lg:flex flex-1 bg-primary/5 p-12 items-center justify-center">
-        <div className="max-w-md space-y-6">
+      <div className="hidden lg:flex flex-1 bg-primary/5 px-12 py-16">
+        <div className="mx-auto max-w-md space-y-6">
           <h1 className="text-4xl font-bold tracking-tight">
             Async Standup Manager
           </h1>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Calendar className="h-6 w-6 mt-1 text-primary" />
+              <Calendar className="mt-1 h-6 w-6 text-primary" />
               <div>
                 <h3 className="font-semibold">Flexible Standup Management</h3>
                 <p className="text-sm text-muted-foreground">
@@ -100,7 +108,7 @@ export default function AuthPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <UserPlus className="h-6 w-6 mt-1 text-primary" />
+              <UserPlus className="mt-1 h-6 w-6 text-primary" />
               <div>
                 <h3 className="font-semibold">Team Collaboration</h3>
                 <p className="text-sm text-muted-foreground">
