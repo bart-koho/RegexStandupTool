@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTeamMemberSchema, responseSchema } from "@shared/schema";
+import { generateActivationToken, sendActivationEmail } from "./email";
+import { nanoid } from "nanoid";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -10,23 +12,74 @@ export function registerRoutes(app: Express): Server {
   // Team member routes
   app.post("/api/team-members", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+    if (req.user?.role !== 'admin') return res.sendStatus(403);
+
     const parsed = insertTeamMemberSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json(parsed.error);
     }
 
-    const member = await storage.createTeamMember(req.user!.id, parsed.data);
-    res.status(201).json(member);
+    // Create user account first
+    const username = `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]/g, '')}_${nanoid(6)}`;
+    const activationToken = generateActivationToken();
+
+    try {
+      const user = await storage.createUser({
+        username,
+        email: parsed.data.email,
+        role: "team_member",
+        activationToken,
+      });
+
+      const member = await storage.createTeamMember(req.user!.id, {
+        name: parsed.data.name,
+        email: parsed.data.email,
+      });
+
+      // Send activation email
+      const emailSent = await sendActivationEmail(
+        parsed.data.email,
+        parsed.data.name,
+        activationToken
+      );
+
+      if (!emailSent) {
+        // If email fails, still return success but log the error
+        console.error('Failed to send activation email to:', parsed.data.email);
+      }
+
+      res.status(201).json(member);
+    } catch (error) {
+      console.error('Error creating team member:', error);
+      res.status(500).json({ message: 'Failed to create team member' });
+    }
   });
 
   app.get("/api/team-members", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user?.role !== 'admin') return res.sendStatus(403);
+
     const members = await storage.getTeamMembers(req.user!.id);
     res.json(members);
   });
 
-  // Standup routes
+  // Add activation endpoint
+  app.post("/api/activate", async (req, res) => {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    const success = await storage.activateUser(token, password);
+    if (!success) {
+      return res.status(400).json({ message: "Invalid or expired activation token" });
+    }
+
+    res.status(200).json({ message: "Account activated successfully" });
+  });
+
+  // Keep existing routes
   app.post("/api/standups", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -40,7 +93,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/standups/:id/assign", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     const { teamMemberIds } = req.body;
     if (!Array.isArray(teamMemberIds)) {
       return res.status(400).json({ message: "teamMemberIds must be an array" });

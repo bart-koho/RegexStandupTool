@@ -1,11 +1,16 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
+  role: text("role").notNull().default("team_member"),
+  status: text("status").notNull().default("inactive"),
+  activationToken: text("activation_token"),
+  email: text("email").notNull().unique(),
 });
 
 export const teamMembers = pgTable("team_members", {
@@ -33,9 +38,42 @@ export const standupAssignments = pgTable("standup_assignments", {
   response: json("response").default(null),
 });
 
+export const usersRelations = relations(users, ({ many }) => ({
+  teamMembers: many(teamMembers),
+  standups: many(standups),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const standupsRelations = relations(standups, ({ one, many }) => ({
+  user: one(users, {
+    fields: [standups.userId],
+    references: [users.id],
+  }),
+  assignments: many(standupAssignments),
+}));
+
+export const standupAssignmentsRelations = relations(standupAssignments, ({ one }) => ({
+  standup: one(standups, {
+    fields: [standupAssignments.standupId],
+    references: [standups.id],
+  }),
+  teamMember: one(teamMembers, {
+    fields: [standupAssignments.teamMemberId],
+    references: [teamMembers.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  role: true,
 });
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers)

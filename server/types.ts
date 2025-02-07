@@ -11,7 +11,8 @@ export interface IStorage {
   sessionStore: Store;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: Partial<InsertUser> & { activationToken?: string }): Promise<User>;
+  activateUser(token: string, password: string): Promise<boolean>;
   createTeamMember(
     userId: number,
     member: Omit<TeamMember, "id" | "userId" | "active">,

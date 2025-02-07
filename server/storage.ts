@@ -16,6 +16,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import crypto from 'crypto';
+import { hashPassword } from "./auth";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -39,9 +40,35 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async createUser(insertUser: Partial<InsertUser> & { activationToken?: string }): Promise<User> {
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      status: 'inactive',
+      role: insertUser.role || 'team_member',
+    }).returning();
     return user;
+  }
+
+  async activateUser(token: string, password: string): Promise<boolean> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.activationToken, token));
+
+    if (!user) return false;
+
+    const hashedPassword = await hashPassword(password);
+
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        status: 'active',
+        activationToken: null,
+      })
+      .where(eq(users.id, user.id));
+
+    return true;
   }
 
   async createTeamMember(
@@ -50,13 +77,18 @@ export class DatabaseStorage implements IStorage {
   ): Promise<TeamMember> {
     const [teamMember] = await db
       .insert(teamMembers)
-      .values({ ...member, userId, active: true })
+      .values({
+        name: member.name,
+        email: member.email,
+        userId,
+        active: true,
+      })
       .returning();
     return teamMember;
   }
 
   async getTeamMembers(userId: number): Promise<TeamMember[]> {
-    return db
+    return await db
       .select()
       .from(teamMembers)
       .where(eq(teamMembers.userId, userId))
@@ -101,11 +133,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStandupsByUser(userId: number): Promise<Standup[]> {
-    return db.select().from(standups).where(eq(standups.userId, userId));
+    return await db
+      .select()
+      .from(standups)
+      .where(eq(standups.userId, userId));
   }
 
   async getStandupAssignments(standupId: number): Promise<StandupAssignment[]> {
-    return db
+    return await db
       .select()
       .from(standupAssignments)
       .where(eq(standupAssignments.standupId, standupId));
