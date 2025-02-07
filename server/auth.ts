@@ -49,7 +49,6 @@ export async function createInitialAdminUser() {
     password: hashedPassword,
     role: "admin",
     email: `${adminUsername}@example.com`,
-    status: "active",
   });
   console.log("Initial admin user created successfully");
 }
@@ -78,18 +77,26 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log('Attempting login for username:', username);
         const user = await storage.getUserByUsername(username);
-        if (!user || !user.password) {
-          console.log('User not found or no password set');
-          return done(null, false);
+
+        if (!user) {
+          console.log('User not found:', username);
+          return done(null, false, { message: 'User not found' });
+        }
+
+        if (!user.password) {
+          console.log('No password set for user:', username);
+          return done(null, false, { message: 'No password set' });
         }
 
         const isValid = await comparePasswords(password, user.password);
         if (!isValid) {
-          console.log('Invalid password');
-          return done(null, false);
+          console.log('Invalid password for user:', username);
+          return done(null, false, { message: 'Invalid password' });
         }
 
+        console.log('Login successful for user:', username);
         return done(null, user);
       } catch (err) {
         console.error('Auth error:', err);
@@ -119,20 +126,22 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    console.log('Login request received:', req.body);
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: any) => {
       if (err) {
         console.error('Login error:', err);
         return next(err);
       }
       if (!user) {
         console.log('Login failed:', info);
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
       req.logIn(user, (err) => {
         if (err) {
           console.error('Session error:', err);
           return next(err);
         }
+        console.log('Login successful, user:', user.id);
         return res.status(200).json(user);
       });
     })(req, res, next);

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, UserPlus, Loader2 } from "lucide-react";
 import { insertUserSchema } from "@shared/schema";
 
-const authSchema = insertUserSchema.extend({
+const authSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -53,6 +53,7 @@ export default function AuthPage() {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((data) => {
+                console.log('Submitting login form:', { username: data.username });
                 loginMutation.mutate({
                   username: data.username,
                   password: data.password,
