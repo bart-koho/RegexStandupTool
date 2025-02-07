@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function TeamMemberList({
   standupId,
@@ -18,6 +19,7 @@ export default function TeamMemberList({
   assignments: StandupAssignment[];
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const { data: members, isLoading } = useQuery<TeamMember[]>({
@@ -67,7 +69,7 @@ export default function TeamMemberList({
 
   return (
     <div className="space-y-4">
-      {selectedIds.length > 0 && (
+      {user?.role === 'admin' && selectedIds.length > 0 && (
         <div className="flex justify-end">
           <Button
             size="sm"
@@ -91,18 +93,20 @@ export default function TeamMemberList({
               className="flex items-center justify-between py-2 px-4 border rounded-lg hover:bg-accent/50"
             >
               <div className="flex items-center gap-4 flex-1">
-                <Checkbox
-                  id={`member-${member.id}`}
-                  checked={selectedIds.includes(member.id)}
-                  disabled={assignedIds.has(member.id)}
-                  onCheckedChange={(checked) => {
-                    setSelectedIds(
-                      checked
-                        ? [...selectedIds, member.id]
-                        : selectedIds.filter((id) => id !== member.id)
-                    );
-                  }}
-                />
+                {user?.role === 'admin' && (
+                  <Checkbox
+                    id={`member-${member.id}`}
+                    checked={selectedIds.includes(member.id)}
+                    disabled={assignedIds.has(member.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedIds(
+                        checked
+                          ? [...selectedIds, member.id]
+                          : selectedIds.filter((id) => id !== member.id)
+                      );
+                    }}
+                  />
+                )}
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-medium">{member.name}</span>
                   <span className="text-muted-foreground">•</span>
@@ -127,7 +131,7 @@ export default function TeamMemberList({
 
         {(!members || members.length === 0) && (
           <div className="text-center py-4 text-muted-foreground">
-            No team members available. Add team members first.
+            No team members available.
           </div>
         )}
       </div>
