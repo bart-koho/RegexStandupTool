@@ -68,14 +68,14 @@ export default function StandupPage({ params }: { params: { id: string } }) {
         {canSubmitResponse && (
           <Card>
             <CardHeader>
-              <CardTitle>Submit Your Response</CardTitle>
+              <CardTitle>Submit Your Update</CardTitle>
               <CardDescription>
-                Please provide your updates for today's standup
+                Share your daily progress with the team
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponseForm 
-                responseUrl={userAssignment?.responseUrl} // Added ? for null safety
+                responseUrl={userAssignment?.responseUrl}
                 onSuccess={() => window.location.reload()}
               />
             </CardContent>
@@ -109,31 +109,8 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                     Status: {assignment.status}
                   </div>
                   {assignment.response && (
-                    <div className="space-y-2 text-sm">
-                      <p>
-                        <strong>Accomplishments:</strong>{" "}
-                        {(assignment.response as StandupResponse).accomplishments}
-                      </p>
-                      <p>
-                        <strong>Blockers:</strong>{" "}
-                        {(assignment.response as StandupResponse).blockers}
-                      </p>
-                      <p>
-                        <strong>Plans:</strong>{" "}
-                        {(assignment.response as StandupResponse).plans}
-                      </p>
-                      {(assignment.response as StandupResponse).help && (
-                        <p>
-                          <strong>Help Needed:</strong>{" "}
-                          {(assignment.response as StandupResponse).help}
-                        </p>
-                      )}
-                      {(assignment.response as StandupResponse).notes && (
-                        <p>
-                          <strong>Additional Notes:</strong>{" "}
-                          {(assignment.response as StandupResponse).notes}
-                        </p>
-                      )}
+                    <div className="text-sm mt-2">
+                      {(assignment.response as StandupResponse).response}
                     </div>
                   )}
                 </div>

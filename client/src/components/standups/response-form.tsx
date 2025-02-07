@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { Loader2 } from "lucide-react";
 
 export default function ResponseForm({
   responseUrl,
@@ -28,11 +29,7 @@ export default function ResponseForm({
   const form = useForm<StandupResponse>({
     resolver: zodResolver(responseSchema),
     defaultValues: {
-      accomplishments: "",
-      blockers: "",
-      plans: "",
-      help: "",
-      notes: "",
+      response: "",
     },
   });
 
@@ -61,68 +58,16 @@ export default function ResponseForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="accomplishments"
+          name="response"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>What did you accomplish since the last standup?</FormLabel>
+              <FormLabel>Daily Update</FormLabel>
               <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="blockers"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Are you facing any blockers or challenges?</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="plans"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>What are your plans for today?</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="help"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Do you need any help or support?</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Additional notes (optional)</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
+                <Textarea 
+                  {...field} 
+                  placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
+                  className="min-h-[150px]"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,6 +75,7 @@ export default function ResponseForm({
         />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
           Submit Response
         </Button>
       </form>

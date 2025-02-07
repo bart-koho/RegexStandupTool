@@ -93,11 +93,7 @@ export const insertStandupSchema = z.object({
 });
 
 export const responseSchema = z.object({
-  accomplishments: z.string(),
-  blockers: z.string(),
-  plans: z.string(),
-  help: z.string(),
-  notes: z.string().optional(),
+  response: z.string().min(1, "Please provide your update"),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
