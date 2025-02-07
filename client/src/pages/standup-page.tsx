@@ -2,19 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Standup, StandupAssignment, StandupResponse, TeamMember } from "@shared/schema";
 import TeamMemberList from "@/components/standups/team-member-list";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, ArrowLeft, PenLine } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import Container from "@/components/layout/container";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
 import ResponseForm from "@/components/standups/response-form";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: standup, isLoading: loadingStandup } = useQuery<Standup>({
     queryKey: [`/api/standups/${params.id}`],
@@ -24,6 +19,12 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     StandupAssignment[]
   >({
     queryKey: [`/api/standups/${params.id}/assignments`],
+  });
+
+  // Get the user's team member record
+  const { data: teamMembers } = useQuery<TeamMember[]>({
+    queryKey: ["/api/team-members"],
+    enabled: !!user && user.role !== 'admin', // Only fetch for non-admin users
   });
 
   if (loadingStandup || loadingAssignments) {
@@ -37,7 +38,8 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   if (!standup) return null;
 
   // Find the current user's assignment if they have one
-  const userAssignment = assignments?.find(a => a.teamMemberId === user?.id);
+  const userTeamMember = teamMembers?.[0]; // Non-admin users only have their own record
+  const userAssignment = assignments?.find(a => a.teamMemberId === userTeamMember?.id);
   const canSubmitResponse = userAssignment && userAssignment.status === "pending";
 
   return (
@@ -73,7 +75,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <ResponseForm 
-                responseUrl={userAssignment.responseUrl}
+                responseUrl={userAssignment?.responseUrl} // Added ? for null safety
                 onSuccess={() => window.location.reload()}
               />
             </CardContent>
