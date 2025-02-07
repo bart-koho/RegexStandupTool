@@ -4,6 +4,7 @@ import TeamMemberList from "@/components/standups/team-member-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import Container from "@/components/layout/container";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { data: standup, isLoading: loadingStandup } = useQuery<Standup>({
@@ -27,7 +28,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   if (!standup) return null;
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6 mb-16">
+    <Container className="py-6 space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/">
           <a className="text-muted-foreground hover:text-foreground">
@@ -88,6 +89,6 @@ export default function StandupPage({ params }: { params: { id: string } }) {
           </Card>
         )}
       </div>
-    </div>
+    </Container>
   );
 }

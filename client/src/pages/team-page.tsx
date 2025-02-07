@@ -22,6 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, User2, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Container from "@/components/layout/container";
 import type { z } from "zod";
 
 type FormData = z.infer<typeof insertTeamMemberSchema>;
@@ -71,7 +72,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6 mb-16">
+    <Container className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Team Members</h1>
         <Dialog>
@@ -151,6 +152,6 @@ export default function TeamPage() {
           </div>
         )}
       </div>
-    </div>
+    </Container>
   );
 }

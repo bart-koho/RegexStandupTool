@@ -12,11 +12,12 @@ import { Plus, ArrowRight, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Container from "@/components/layout/container";
 
 export default function HomePage() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
-  
+
   const { data: standups, isLoading } = useQuery<Standup[]>({
     queryKey: ["/api/standups"],
   });
@@ -44,7 +45,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6 mb-16">
+    <Container className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Standups</h1>
         <Button onClick={createStandup}>
@@ -84,6 +85,6 @@ export default function HomePage() {
           </Card>
         )}
       </div>
-    </div>
+    </Container>
   );
 }
