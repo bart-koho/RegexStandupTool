@@ -9,6 +9,7 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import TeamPage from "@/pages/team-page";
 import StandupPage from "@/pages/standup-page";
+import ActivatePage from "@/pages/activate-page";
 import TopNav from "@/components/layout/top-nav";
 import MobileNav from "@/components/layout/mobile-nav";
 
@@ -16,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/activate/:token" component={ActivatePage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/team" component={TeamPage} />
       <ProtectedRoute path="/standup/:id" component={StandupPage} />
@@ -31,6 +33,7 @@ function App() {
         <div className="min-h-screen bg-background">
           <TopNav />
           <Router />
+          <MobileNav />
         </div>
         <Toaster />
       </AuthProvider>

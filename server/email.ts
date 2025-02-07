@@ -14,11 +14,14 @@ export function generateActivationToken(): string {
 
 export async function sendActivationEmail(email: string, name: string, token: string) {
   const activationLink = `${process.env.BASE_URL || 'http://localhost:5000'}/activate/${token}`;
-  
+
   try {
     await mailService.send({
       to: email,
-      from: 'noreply@asyncstandup.com', // Update this with your verified sender
+      from: {
+        email: 'noreply@asyncstandup.com',
+        name: 'Async Standup'
+      },
       subject: 'Welcome to Async Standup - Activate Your Account',
       html: `
         <h1>Welcome to Async Standup, ${name}!</h1>
