@@ -13,10 +13,12 @@ import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Container from "@/components/layout/container";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function HomePage() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const { data: standups, isLoading } = useQuery<Standup[]>({
     queryKey: ["/api/standups"],
@@ -48,10 +50,12 @@ export default function HomePage() {
     <Container className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Standups</h1>
-        <Button onClick={createStandup}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Standup
-        </Button>
+        {user?.role === 'admin' && (
+          <Button onClick={createStandup}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Standup
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -79,7 +83,9 @@ export default function HomePage() {
             <CardHeader>
               <CardTitle>No standups yet</CardTitle>
               <CardDescription>
-                Create your first standup to get started
+                {user?.role === 'admin' 
+                  ? 'Create your first standup to get started'
+                  : 'No standups have been created yet'}
               </CardDescription>
             </CardHeader>
           </Card>
