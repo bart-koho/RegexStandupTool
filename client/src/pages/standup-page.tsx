@@ -76,7 +76,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             <CardContent>
               <ResponseForm 
                 responseUrl={userAssignment?.responseUrl}
-                onSuccess={() => window.location.reload()}
+                standupId={standup.id}
               />
             </CardContent>
           </Card>

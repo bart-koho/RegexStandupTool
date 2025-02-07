@@ -12,19 +12,37 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useCallback } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import ReactCanvasConfetti from "react-canvas-confetti";
 
 export default function ResponseForm({
   responseUrl,
   onSuccess,
+  standupId,
 }: {
   responseUrl: string;
   onSuccess?: () => void;
+  standupId: number;
 }) {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fire, setFire] = useState(false);
+
+  // Confetti configuration and handler
+  const onConfettiComplete = useCallback(() => {
+    setFire(false);
+  }, []);
+
+  const confettiProps = {
+    fire,
+    onDecay: onConfettiComplete,
+    className: "fixed top-0 left-0 w-full h-full pointer-events-none z-50",
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 }
+  };
 
   const form = useForm<StandupResponse>({
     resolver: zodResolver(responseSchema),
@@ -33,52 +51,66 @@ export default function ResponseForm({
     },
   });
 
-  const onSubmit = async (data: StandupResponse) => {
-    try {
-      setIsSubmitting(true);
-      await apiRequest("POST", `/api/responses/${responseUrl}`, data);
+  const submitMutation = useMutation({
+    mutationFn: async (data: StandupResponse) => {
+      const res = await apiRequest("POST", `/api/responses/${responseUrl}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
       toast({
         title: "Success",
         description: "Your response has been submitted",
       });
+      // Trigger confetti
+      setFire(true);
+      // Invalidate relevant queries to update the UI
+      queryClient.invalidateQueries({ queryKey: [`/api/standups/${standupId}/assignments`] });
       onSuccess?.();
-    } catch (error) {
+      // Reset form
+      form.reset();
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit response",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const onSubmit = (data: StandupResponse) => {
+    submitMutation.mutate(data);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="response"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Daily Update</FormLabel>
-              <FormControl>
-                <Textarea 
-                  {...field} 
-                  placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
-                  className="min-h-[150px]"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <>
+      <ReactCanvasConfetti {...confettiProps} />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="response"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Daily Update</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field} 
+                    placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
+                    className="min-h-[150px]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-          Submit Response
-        </Button>
-      </form>
-    </Form>
+          <Button type="submit" className="w-full" disabled={submitMutation.isPending}>
+            {submitMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Submit Response
+          </Button>
+        </form>
+      </Form>
+    </>
   );
 }
