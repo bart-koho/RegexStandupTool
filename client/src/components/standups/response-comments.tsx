@@ -76,18 +76,16 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
       onOpenChange={setIsOpen}
       className="w-full space-y-2"
     >
-      <div className="flex items-center justify-between">
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="gap-2 px-0">
-            <MessageCircle className="h-4 w-4" />
-            <span className="text-xs">{comments.length || ""} Comments</span>
-          </Button>
-        </CollapsibleTrigger>
-      </div>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2">
+          <MessageCircle className="h-4 w-4" />
+          <span className="text-xs text-muted-foreground">{comments.length || ""}</span>
+        </Button>
+      </CollapsibleTrigger>
 
       <CollapsibleContent className="space-y-4">
         {isLoading ? (
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-2">
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
         ) : (
@@ -97,11 +95,12 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Add a comment..."
-                className="flex-1"
+                className="flex-1 h-8 text-sm"
               />
               <Button
                 type="submit"
                 size="sm"
+                className="h-8"
                 disabled={!content.trim() || commentMutation.isPending}
               >
                 {commentMutation.isPending && (
@@ -111,7 +110,7 @@ export function ResponseComments({ assignmentId }: { assignmentId: number }) {
               </Button>
             </form>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {comments.map(({ comment, user }) => (
                 <div key={comment.id} className="space-y-1">
                   <div className="flex items-center gap-2 text-sm">
