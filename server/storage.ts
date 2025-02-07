@@ -102,6 +102,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamMembers(userId: number): Promise<TeamMember[]> {
+    // Get the user to check if they're an admin
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    // If admin, return all team members
+    if (user?.role === 'admin') {
+      return await db
+        .select()
+        .from(teamMembers);
+    }
+
+    // For non-admin users, return only their own team member record
     return await db
       .select()
       .from(teamMembers)
