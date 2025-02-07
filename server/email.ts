@@ -12,8 +12,8 @@ export function generateActivationToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export async function sendActivationEmail(email: string, name: string, token: string) {
-  const activationLink = `${process.env.BASE_URL || 'http://localhost:5000'}/activate/${token}`;
+export async function sendActivationEmail(email: string, name: string, token: string, baseUrl: string) {
+  const activationLink = `${baseUrl}/activate/${token}`;
 
   try {
     await mailService.send({

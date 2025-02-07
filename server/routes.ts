@@ -50,11 +50,17 @@ export function registerRoutes(app: Express): Server {
         email: parsed.data.email,
       });
 
+      // Get the base URL from the request
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${protocol}://${host}`;
+
       // Send activation email
       const emailSent = await sendActivationEmail(
         parsed.data.email,
         parsed.data.name,
-        activationToken
+        activationToken,
+        baseUrl
       );
 
       if (!emailSent) {
@@ -106,7 +112,6 @@ export function registerRoutes(app: Express): Server {
     res.status(200).json({ message: "Account activated successfully" });
   });
 
-  // Keep existing routes
   app.post("/api/standups", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
