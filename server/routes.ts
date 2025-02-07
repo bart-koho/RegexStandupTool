@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments, insertReactionSchema, standupReactions } from "@shared/schema";
+import { insertTeamMemberSchema, responseSchema, users, standups, teamMembers, standupAssignments, insertReactionSchema, standupReactions, insertCommentSchema, standupComments } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
 import { eq, desc, sql, inArray, and } from 'drizzle-orm';
@@ -381,6 +381,70 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching reactions:', error);
       res.status(500).json({ message: 'Failed to fetch reactions' });
+    }
+  });
+
+  // Get comments for a standup response
+  app.get("/api/responses/:id/comments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const comments = await db
+        .select({
+          comment: standupComments,
+          user: {
+            id: users.id,
+            username: users.username,
+          },
+        })
+        .from(standupComments)
+        .innerJoin(users, eq(users.id, standupComments.userId))
+        .where(eq(standupComments.assignmentId, parseInt(req.params.id)))
+        .orderBy(desc(standupComments.createdAt));
+
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ message: 'Failed to fetch comments' });
+    }
+  });
+
+  // Add a comment to a standup response
+  app.post("/api/responses/:id/comments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const parsed = insertCommentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json(parsed.error);
+    }
+
+    try {
+      const [comment] = await db
+        .insert(standupComments)
+        .values({
+          assignmentId: parseInt(req.params.id),
+          userId: req.user!.id,
+          content: parsed.data.content,
+        })
+        .returning();
+
+      // Return the comment with the user information
+      const [commentWithUser] = await db
+        .select({
+          comment: standupComments,
+          user: {
+            id: users.id,
+            username: users.username,
+          },
+        })
+        .from(standupComments)
+        .innerJoin(users, eq(users.id, standupComments.userId))
+        .where(eq(standupComments.id, comment.id));
+
+      res.status(201).json(commentWithUser);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      res.status(500).json({ message: 'Failed to add comment' });
     }
   });
 

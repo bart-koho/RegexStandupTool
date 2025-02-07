@@ -76,7 +76,7 @@ export function ResponseReactions({ assignmentId }: { assignmentId: number }) {
             <Smile className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="flex flex-wrap gap-1 p-2">
+        <DropdownMenuContent align="end" className="flex flex-wrap gap-1 p-2">
           {EMOJI_OPTIONS.map(emoji => (
             <Button
               key={emoji}

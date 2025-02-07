@@ -47,10 +47,19 @@ export const standupReactions = pgTable("standup_reactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const standupComments = pgTable("standup_comments", {
+  id: serial("id").primaryKey(),
+  assignmentId: integer("assignment_id").notNull().references(() => standupAssignments.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   standups: many(standups),
   reactions: many(standupReactions),
+  comments: many(standupComments),
 }));
 
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
@@ -78,6 +87,7 @@ export const standupAssignmentsRelations = relations(standupAssignments, ({ one,
     references: [teamMembers.id],
   }),
   reactions: many(standupReactions),
+  comments: many(standupComments),
 }));
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -110,6 +120,15 @@ export const insertReactionSchema = createInsertSchema(standupReactions)
     emoji: true,
   });
 
+export const insertCommentSchema = createInsertSchema(standupComments)
+  .pick({
+    assignmentId: true,
+    content: true,
+  })
+  .extend({
+    content: z.string().min(1, "Comment cannot be empty"),
+  });
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type User = typeof users.$inferSelect;
@@ -119,3 +138,5 @@ export type StandupAssignment = typeof standupAssignments.$inferSelect;
 export type StandupResponse = z.infer<typeof responseSchema>;
 export type InsertReaction = z.infer<typeof insertReactionSchema>;
 export type StandupReaction = typeof standupReactions.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type StandupComment = typeof standupComments.$inferSelect;

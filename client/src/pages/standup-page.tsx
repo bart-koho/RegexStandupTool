@@ -12,6 +12,7 @@ import { ResponseReactions } from "@/components/standups/response-reactions";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import InviteMembersDialog from "@/components/standups/invite-members-dialog";
+import { ResponseComments } from "@/components/standups/response-comments";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -169,7 +170,10 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                           className="text-sm mt-2 text-muted-foreground prose prose-sm max-w-none"
                           dangerouslySetInnerHTML={{ __html: response.response }}
                         />
-                        <ResponseReactions assignmentId={assignment.id} />
+                        <div className="flex justify-between items-center mt-2">
+                          <ResponseComments assignmentId={assignment.id} />
+                          <ResponseReactions assignmentId={assignment.id} />
+                        </div>
                       </>
                     )}
                   </>
