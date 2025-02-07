@@ -74,10 +74,44 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/team-members", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (req.user?.role !== 'admin') return res.sendStatus(403);
 
-    const members = await storage.getTeamMembers(req.user!.id);
-    res.json(members);
+    try {
+      // If user is admin, return all team members
+      if (req.user?.role === 'admin') {
+        const members = await storage.getTeamMembers(req.user!.id);
+        return res.json(members);
+      }
+
+      // If standupId is provided, return team members for that standup
+      const standupId = req.query.standupId;
+      if (standupId) {
+        const assignments = await db
+          .select({
+            teamMemberId: standupAssignments.teamMemberId
+          })
+          .from(standupAssignments)
+          .where(eq(standupAssignments.standupId, parseInt(standupId as string)));
+
+        if (assignments.length === 0) {
+          return res.json([]);
+        }
+
+        const teamMemberIds = assignments.map(a => a.teamMemberId);
+        const members = await db
+          .select()
+          .from(teamMembers)
+          .where(inArray(teamMembers.id, teamMemberIds));
+
+        return res.json(members);
+      }
+
+      // Otherwise, just return the user's own team member record
+      const members = await storage.getTeamMembers(req.user!.id);
+      return res.json(members);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      res.status(500).json({ message: 'Failed to fetch team members' });
+    }
   });
 
   app.delete("/api/team-members/:id", async (req, res) => {

@@ -21,7 +21,11 @@ export default function TeamMemberList({
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const { data: members, isLoading } = useQuery<TeamMember[]>({
-    queryKey: ["/api/team-members"],
+    queryKey: ["/api/team-members", { standupId }],
+    queryFn: () => fetch(`/api/team-members?standupId=${standupId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch team members');
+      return res.json();
+    })
   });
 
   const assignMutation = useMutation({
