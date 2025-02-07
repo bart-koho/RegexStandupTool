@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { TeamMember, insertTeamMemberSchema, type InsertTeamMember } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ type FormData = z.infer<typeof insertTeamMemberSchema>;
 
 export default function TeamPage() {
   const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(insertTeamMemberSchema),
     defaultValues: {
@@ -62,6 +64,7 @@ export default function TeamPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       form.reset();
+      setDialogOpen(false);
       toast({
         title: "Success",
         description: "Team member added successfully",
@@ -108,7 +111,7 @@ export default function TeamPage() {
     <Container className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Team Members</h1>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -155,6 +158,9 @@ export default function TeamPage() {
                   className="w-full"
                   disabled={createMutation.isPending}
                 >
+                  {createMutation.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   Add Member
                 </Button>
               </form>

@@ -100,8 +100,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(teamMembers)
-      .where(eq(teamMembers.userId, userId))
-      .where(eq(teamMembers.active, true));
+      .where(eq(teamMembers.userId, userId));
   }
 
   async createStandup(
