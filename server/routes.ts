@@ -2,9 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, responseSchema } from "@shared/schema";
+import { insertTeamMemberSchema, responseSchema, users } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
+import { eq } from 'drizzle-orm';
+import { db } from './db';
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -19,11 +21,23 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).json(parsed.error);
     }
 
-    // Create user account first
-    const username = `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]/g, '')}_${nanoid(6)}`;
-    const activationToken = generateActivationToken();
-
     try {
+      // Check if user with email already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, parsed.data.email));
+
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: 'A user with this email already exists' 
+        });
+      }
+
+      // Create user account first
+      const username = `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]/g, '')}_${nanoid(6)}`;
+      const activationToken = generateActivationToken();
+
       const user = await storage.createUser({
         username,
         email: parsed.data.email,

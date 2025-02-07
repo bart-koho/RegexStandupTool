@@ -42,9 +42,12 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: Partial<InsertUser> & { activationToken?: string }): Promise<User> {
     const [user] = await db.insert(users).values({
-      ...insertUser,
-      status: 'inactive',
+      username: insertUser.username!,
+      email: insertUser.email!,
+      password: insertUser.password,
       role: insertUser.role || 'team_member',
+      status: 'inactive',
+      activationToken: insertUser.activationToken,
     }).returning();
     return user;
   }
