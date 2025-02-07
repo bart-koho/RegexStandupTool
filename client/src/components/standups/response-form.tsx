@@ -76,36 +76,22 @@ export default function ResponseForm({
     },
   });
 
-  const onSubmit = (data: StandupResponse) => {
-    submitMutation.mutate(data);
-  };
-
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="response"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Daily Update</FormLabel>
-              <FormControl>
-                <TiptapEditor
-                  {...field}
-                  placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
-                  className="min-h-[150px]"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <div className="space-y-4">
+      <TiptapEditor
+        value={form.watch("response")}
+        onChange={(value) => form.setValue("response", value)}
+        placeholder="What are you working on? Are there any blocking issues? Is there anything interesting for the team to know?"
+      />
 
-        <Button type="submit" className="w-full" disabled={submitMutation.isPending}>
-          {submitMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-          {mode === "create" ? "Submit Response" : "Update Response"}
-        </Button>
-      </form>
-    </Form>
+      <Button 
+        onClick={form.handleSubmit((data) => submitMutation.mutate(data))}
+        className="w-full" 
+        disabled={submitMutation.isPending}
+      >
+        {submitMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {mode === "create" ? "Submit Response" : "Update Response"}
+      </Button>
+    </div>
   );
 }
