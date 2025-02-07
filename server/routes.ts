@@ -221,17 +221,17 @@ export function registerRoutes(app: Express): Server {
           standup: standups,
           stats: sql<{ totalAssignments: number; completedResponses: number }>`
             json_build_object(
-              'totalAssignments', COALESCE((
+              'totalAssignments', (
                 SELECT COUNT(*)::int 
-                FROM ${standupAssignments} 
-                WHERE ${standupAssignments.standupId} = ${standups.id}
-              ), 0),
-              'completedResponses', COALESCE((
+                FROM ${standupAssignments} sa
+                WHERE sa.standup_id = ${standups.id}
+              ),
+              'completedResponses', (
                 SELECT COUNT(*)::int 
-                FROM ${standupAssignments} 
-                WHERE ${standupAssignments.standupId} = ${standups.id} 
-                AND ${standupAssignments.status} = 'completed'
-              ), 0)
+                FROM ${standupAssignments} sa
+                WHERE sa.standup_id = ${standups.id} 
+                AND sa.status = 'completed'
+              )
             )
           `
         })
