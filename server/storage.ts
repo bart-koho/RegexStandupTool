@@ -175,15 +175,25 @@ export class DatabaseStorage implements IStorage {
         .where(eq(teamMembers.id, id));
 
       if (teamMember) {
+        // Check if the associated user is an admin before deletion
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, teamMember.userId));
+
+        if (user && user.role === 'admin') {
+          throw new Error('Cannot delete admin user');
+        }
+
         // Delete the team member first (due to foreign key constraint)
         await db.delete(teamMembers).where(eq(teamMembers.id, id));
 
-        // Then delete the associated user
+        // Then delete the associated user only if they're not an admin
         await db.delete(users).where(eq(users.id, teamMember.userId));
       }
     } catch (error) {
       console.error('Error deleting team member:', error);
-      throw new Error('Failed to delete team member');
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete team member');
     }
   }
 }

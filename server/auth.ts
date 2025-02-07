@@ -54,6 +54,9 @@ export async function createInitialAdminUser() {
 }
 
 export function setupAuth(app: Express) {
+  // First ensure admin user exists
+  createInitialAdminUser().catch(console.error);
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID!,
     resave: false,
