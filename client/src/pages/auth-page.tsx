@@ -13,12 +13,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Calendar, UserPlus } from "lucide-react";
+import { Calendar, UserPlus, Loader2 } from "lucide-react";
 import { insertUserSchema } from "@shared/schema";
 
 const authSchema = insertUserSchema.extend({
-  username: z.string().min(3).max(20),
-  password: z.string().min(6),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type FormData = z.infer<typeof authSchema>;
@@ -52,7 +52,12 @@ export default function AuthPage() {
           </div>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => loginMutation.mutate(data))}
+              onSubmit={form.handleSubmit((data) => {
+                loginMutation.mutate({
+                  username: data.username,
+                  password: data.password,
+                });
+              })}
               className="space-y-6"
             >
               <FormField
@@ -86,6 +91,9 @@ export default function AuthPage() {
                 className="w-full"
                 disabled={loginMutation.isPending}
               >
+                {loginMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Login
               </Button>
             </form>
