@@ -210,94 +210,28 @@ export function registerRoutes(app: Express): Server {
       const pageSize = 25;
       const offset = (page - 1) * pageSize;
 
-      // First get the user's team member record if they're not an admin
-      if (req.user?.role !== 'admin') {
-        // For team members, only show standups they're assigned to
-        const [teamMember] = await db
-          .select()
-          .from(teamMembers)
-          .where(eq(teamMembers.userId, req.user!.id));
+      // Get total count first
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(standups);
 
-        if (!teamMember) {
-          return res.json({
-            items: [],
-            pagination: {
-              page,
-              pageSize,
-              totalItems: 0,
-              totalPages: 0,
-            },
-          });
-        }
+      // Then get the actual items
+      const items = await db
+        .select()
+        .from(standups)
+        .orderBy(desc(standups.createdAt))
+        .limit(pageSize)
+        .offset(offset);
 
-        const assignments = await db
-          .select({ standupId: standupAssignments.standupId })
-          .from(standupAssignments)
-          .where(eq(standupAssignments.teamMemberId, teamMember.id));
-
-        if (assignments.length === 0) {
-          return res.json({
-            items: [],
-            pagination: {
-              page,
-              pageSize,
-              totalItems: 0,
-              totalPages: 0,
-            },
-          });
-        }
-
-        const standupIds = assignments.map(a => a.standupId);
-
-        // Get total count first
-        const [countResult] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(standups)
-          .where(inArray(standups.id, standupIds));
-
-        // Then get the actual items
-        const items = await db
-          .select()
-          .from(standups)
-          .where(inArray(standups.id, standupIds))
-          .orderBy(desc(standups.createdAt))
-          .limit(pageSize)
-          .offset(offset);
-
-        return res.json({
-          items,
-          pagination: {
-            page,
-            pageSize,
-            totalItems: countResult.count,
-            totalPages: Math.ceil(countResult.count / pageSize),
-          },
-        });
-      } else {
-        // Admin sees all standups they created
-        const [countResult] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(standups)
-          .where(eq(standups.userId, req.user!.id));
-
-        const items = await db
-          .select()
-          .from(standups)
-          .where(eq(standups.userId, req.user!.id))
-          .orderBy(desc(standups.createdAt))
-          .limit(pageSize)
-          .offset(offset);
-
-        return res.json({
-          items,
-          pagination: {
-            page,
-            pageSize,
-            totalItems: countResult.count,
-            totalPages: Math.ceil(countResult.count / pageSize),
-          },
-        });
-      }
+      return res.json({
+        items,
+        pagination: {
+          page,
+          pageSize,
+          totalItems: countResult.count,
+          totalPages: Math.ceil(countResult.count / pageSize),
+        },
+      });
     } catch (error) {
       console.error('Error fetching standups:', error);
       res.status(500).json({ message: 'Failed to fetch standups' });
