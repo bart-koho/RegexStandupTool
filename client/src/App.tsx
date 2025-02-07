@@ -9,6 +9,7 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import TeamPage from "@/pages/team-page";
 import StandupPage from "@/pages/standup-page";
+import TopNav from "@/components/layout/top-nav";
 import MobileNav from "@/components/layout/mobile-nav";
 
 function Router() {
@@ -28,8 +29,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen bg-background">
+          <TopNav />
           <Router />
-          <MobileNav />
         </div>
         <Toaster />
       </AuthProvider>
