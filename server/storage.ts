@@ -173,32 +173,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTeamMember(id: number): Promise<void> {
     try {
-      const [teamMember] = await db
-        .select()
-        .from(teamMembers)
-        .where(eq(teamMembers.id, id));
-
-      if (teamMember) {
-        // Delete standup assignments first
-        await db
-          .delete(standupAssignments)
-          .where(eq(standupAssignments.teamMemberId, id));
-
-        // Delete team member record
-        await db
-          .delete(teamMembers)
+      await db.transaction(async (tx) => {
+        const [teamMember] = await tx
+          .select()
+          .from(teamMembers)
           .where(eq(teamMembers.id, id));
 
-        // Delete the associated user account, ensuring we only delete team_member users
-        await db
-          .delete(users)
-          .where(
-            and(
-              eq(users.id, teamMember.userId),
-              eq(users.role, 'team_member')
-            )
-          );
-      }
+        if (teamMember) {
+          // Delete standup assignments first
+          await tx
+            .delete(standupAssignments)
+            .where(eq(standupAssignments.teamMemberId, id));
+
+          // Delete team member record
+          await tx
+            .delete(teamMembers)
+            .where(eq(teamMembers.id, id));
+
+          // Delete the associated user account, ensuring we only delete team_member users
+          await tx
+            .delete(users)
+            .where(
+              and(
+                eq(users.id, teamMember.userId),
+                eq(users.role, 'team_member')
+              )
+            );
+        }
+      });
     } catch (error) {
       console.error('Error deleting team member:', error);
       throw new Error(error instanceof Error ? error.message : 'Failed to delete team member');
