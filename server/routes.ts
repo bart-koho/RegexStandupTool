@@ -282,6 +282,28 @@ export function registerRoutes(app: Express): Server {
     res.json(assignment);
   });
 
+  app.patch("/api/responses/:responseUrl", async (req, res) => {
+    const parsed = responseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json(parsed.error);
+    }
+
+    const assignment = await db
+      .update(standupAssignments)
+      .set({ 
+        response: parsed.data,
+        // Don't change the status since it's already completed
+      })
+      .where(eq(standupAssignments.responseUrl, req.params.responseUrl))
+      .returning();
+
+    if (!assignment || assignment.length === 0) {
+      return res.status(404).json({ message: "Response URL not found" });
+    }
+
+    res.json(assignment[0]);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

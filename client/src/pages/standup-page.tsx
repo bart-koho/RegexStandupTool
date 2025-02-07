@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Standup, StandupAssignment, StandupResponse, TeamMember } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
 import ResponseForm from "@/components/standups/response-form";
@@ -12,6 +14,7 @@ import InviteMembersDialog from "@/components/standups/invite-members-dialog";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
+  const [editingResponseId, setEditingResponseId] = useState<number | null>(null);
 
   const { data: standup, isLoading: loadingStandup } = useQuery<Standup>({
     queryKey: [`/api/standups/${params.id}`],
@@ -109,6 +112,10 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             const teamMember = teamMemberMap.get(assignment.teamMemberId);
             if (!teamMember) return null;
 
+            const isEditing = editingResponseId === assignment.id;
+            const isOwnResponse = userTeamMember?.id === teamMember.id;
+            const response = assignment.response as StandupResponse;
+
             return (
               <div
                 key={assignment.id}
@@ -117,24 +124,48 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                 <div className="flex items-center justify-between">
                   <div className="font-medium">
                     {teamMember.name}
-                    {userTeamMember?.id === teamMember.id && (
+                    {isOwnResponse && (
                       <span className="ml-2 text-sm text-muted-foreground">(You)</span>
                     )}
                   </div>
-                  <Badge
-                    variant={assignment.status === "completed" ? "default" : "secondary"}
-                    className={cn(
-                      assignment.status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-                      assignment.status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={assignment.status === "completed" ? "default" : "secondary"}
+                      className={cn(
+                        assignment.status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+                        assignment.status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                      )}
+                    >
+                      {assignment.status === "completed" ? "Responded" : "Pending"}
+                    </Badge>
+                    {isOwnResponse && assignment.status === "completed" && !isEditing && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingResponseId(assignment.id)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     )}
-                  >
-                    {assignment.status === "completed" ? "Responded" : "Pending"}
-                  </Badge>
-                </div>
-                {assignment.status === "completed" && assignment.response && (
-                  <div className="text-sm mt-2 text-muted-foreground">
-                    {(assignment.response as StandupResponse).response}
                   </div>
+                </div>
+
+                {assignment.status === "completed" && (
+                  isEditing ? (
+                    <div className="mt-4">
+                      <ResponseForm 
+                        responseUrl={assignment.responseUrl}
+                        standupId={standup.id}
+                        initialResponse={response.response}
+                        mode="edit"
+                        onSuccess={() => setEditingResponseId(null)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-sm mt-2 text-muted-foreground">
+                      {response.response}
+                    </div>
+                  )
                 )}
               </div>
             );
