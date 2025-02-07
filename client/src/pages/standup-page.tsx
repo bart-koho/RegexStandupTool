@@ -49,10 +49,16 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   const userAssignment = userTeamMember 
     ? assignments.find(a => a.teamMemberId === userTeamMember.id)
     : undefined;
-  const canSubmitResponse = userAssignment && userAssignment.status === "pending";
 
   // Create a map of team member IDs to team member objects for easy lookup
   const teamMemberMap = new Map(teamMembers.map(member => [member.id, member]));
+
+  // Sort assignments to put user's assignment first
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    if (a.teamMemberId === userTeamMember?.id) return -1;
+    if (b.teamMemberId === userTeamMember?.id) return 1;
+    return 0;
+  });
 
   return (
     <Container className="py-6 space-y-6">
@@ -83,14 +89,14 @@ export default function StandupPage({ params }: { params: { id: string } }) {
       </div>
 
       <div className="space-y-4">
-        {canSubmitResponse && (
+        {userAssignment?.status === "pending" && (
           <Card>
             <CardHeader>
               <CardTitle>Submit Your Update</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponseForm 
-                responseUrl={userAssignment?.responseUrl} //Corrected potential error here.
+                responseUrl={userAssignment.responseUrl}
                 standupId={standup.id}
               />
             </CardContent>
@@ -98,7 +104,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
         )}
 
         <div className="space-y-4">
-          {assignments.map((assignment) => {
+          {sortedAssignments.map((assignment) => {
             const teamMember = teamMemberMap.get(assignment.teamMemberId);
             if (!teamMember) return null;
 
@@ -110,6 +116,9 @@ export default function StandupPage({ params }: { params: { id: string } }) {
                 <div className="flex items-center justify-between">
                   <div className="font-medium">
                     {teamMember.name}
+                    {userTeamMember?.id === teamMember.id && (
+                      <span className="ml-2 text-sm text-muted-foreground">(You)</span>
+                    )}
                   </div>
                   <Badge
                     variant={assignment.status === "completed" ? "default" : "secondary"}
