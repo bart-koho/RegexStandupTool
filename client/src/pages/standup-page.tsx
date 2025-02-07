@@ -59,10 +59,17 @@ export default function StandupPage({ params }: { params: { id: string } }) {
   // Create a map of team member IDs to team member objects for easy lookup
   const teamMemberMap = new Map(teamMembers.map(member => [member.id, member]));
 
-  // Sort assignments to put user's assignment first
+  // Sort assignments to put user's assignment first, then completed responses, then pending ones
   const sortedAssignments = [...assignments].sort((a, b) => {
+    // First priority: user's own assignment goes first
     if (a.teamMemberId === userTeamMember?.id) return -1;
     if (b.teamMemberId === userTeamMember?.id) return 1;
+
+    // Second priority: completed before pending
+    if (a.status === "completed" && b.status === "pending") return -1;
+    if (a.status === "pending" && b.status === "completed") return 1;
+
+    // If same status, maintain original order
     return 0;
   });
 
