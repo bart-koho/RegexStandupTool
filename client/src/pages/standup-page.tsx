@@ -28,7 +28,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     queryKey: ["/api/team-members", { standupId: params.id }],
   });
 
-  // For non-admin users, also get their own team member record to check if they can submit
+  // For non-admin users, get their own team member record to check if they can submit
   const { data: userTeamMembers } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
     enabled: !!user && user.role !== 'admin',
@@ -46,7 +46,9 @@ export default function StandupPage({ params }: { params: { id: string } }) {
 
   // Find the current user's assignment if they have one
   const userTeamMember = userTeamMembers?.[0];
-  const userAssignment = assignments.find(a => a.teamMemberId === userTeamMember?.id);
+  const userAssignment = userTeamMember 
+    ? assignments.find(a => a.teamMemberId === userTeamMember.id)
+    : undefined;
   const canSubmitResponse = userAssignment && userAssignment.status === "pending";
 
   // Create a map of team member IDs to team member objects for easy lookup
@@ -88,7 +90,7 @@ export default function StandupPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <ResponseForm 
-                responseUrl={userAssignment.responseUrl}
+                responseUrl={userAssignment?.responseUrl} //Corrected potential error here.
                 standupId={standup.id}
               />
             </CardContent>

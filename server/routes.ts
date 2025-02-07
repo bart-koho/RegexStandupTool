@@ -76,7 +76,7 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // If standupId is provided, return team members for that standup
+      // If standupId is provided, return all team members for that standup
       const standupId = req.query.standupId;
       if (standupId) {
         const assignments = await db
@@ -85,10 +85,6 @@ export function registerRoutes(app: Express): Server {
           })
           .from(standupAssignments)
           .where(eq(standupAssignments.standupId, parseInt(standupId as string)));
-
-        if (assignments.length === 0) {
-          return res.json([]);
-        }
 
         const teamMemberIds = assignments.map(a => a.teamMemberId);
         const members = await db
@@ -99,21 +95,12 @@ export function registerRoutes(app: Express): Server {
         return res.json(members);
       }
 
-      // If user is admin, return all team members
-      if (req.user?.role === 'admin') {
-        const members = await db
-          .select()
-          .from(teamMembers);
-        return res.json(members);
-      }
-
-      // Otherwise, just return the user's own team member record
-      const [teamMember] = await db
+      // Otherwise return all team members
+      const members = await db
         .select()
-        .from(teamMembers)
-        .where(eq(teamMembers.userId, req.user!.id));
+        .from(teamMembers);
 
-      return res.json(teamMember ? [teamMember] : []);
+      return res.json(members);
     } catch (error) {
       console.error('Error fetching team members:', error);
       res.status(500).json({ message: 'Failed to fetch team members' });
