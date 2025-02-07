@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import Container from "@/components/layout/container";
 import { useAuth } from "@/hooks/use-auth";
 import ResponseForm from "@/components/standups/response-form";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function StandupPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -21,13 +23,18 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     queryKey: [`/api/standups/${params.id}/assignments`],
   });
 
-  // Get the user's team member record
-  const { data: teamMembers } = useQuery<TeamMember[]>({
-    queryKey: ["/api/team-members"],
-    enabled: !!user && user.role !== 'admin', // Only fetch for non-admin users
+  // Get all team members for this standup
+  const { data: teamMembers, isLoading: loadingTeamMembers } = useQuery<TeamMember[]>({
+    queryKey: ["/api/team-members", { standupId: params.id }],
   });
 
-  if (loadingStandup || loadingAssignments) {
+  // For non-admin users, also get their own team member record
+  const { data: userTeamMembers } = useQuery<TeamMember[]>({
+    queryKey: ["/api/team-members"],
+    enabled: !!user && user.role !== 'admin',
+  });
+
+  if (loadingStandup || loadingAssignments || loadingTeamMembers) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <Loader2 className="h-8 w-8 animate-spin text-border" />
@@ -35,12 +42,15 @@ export default function StandupPage({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!standup) return null;
+  if (!standup || !teamMembers) return null;
 
   // Find the current user's assignment if they have one
-  const userTeamMember = teamMembers?.[0]; // Non-admin users only have their own record
+  const userTeamMember = userTeamMembers?.[0];
   const userAssignment = assignments?.find(a => a.teamMemberId === userTeamMember?.id);
   const canSubmitResponse = userAssignment && userAssignment.status === "pending";
+
+  // Create a map of team member IDs to team member objects for easy lookup
+  const teamMemberMap = new Map(teamMembers.map(member => [member.id, member]));
 
   return (
     <Container className="py-6 space-y-6">
@@ -100,21 +110,35 @@ export default function StandupPage({ params }: { params: { id: string } }) {
               <CardTitle>Responses</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {assignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="p-4 border rounded-lg space-y-2"
-                >
-                  <div className="font-medium">
-                    Status: {assignment.status}
-                  </div>
-                  {assignment.response && (
-                    <div className="text-sm mt-2">
-                      {(assignment.response as StandupResponse).response}
+              {assignments.map((assignment) => {
+                const teamMember = teamMemberMap.get(assignment.teamMemberId);
+                return (
+                  <div
+                    key={assignment.id}
+                    className="p-4 border rounded-lg space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {teamMember?.name}
+                      </div>
+                      <Badge
+                        variant={assignment.status === "completed" ? "default" : "secondary"}
+                        className={cn(
+                          assignment.status === "completed" && "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+                          assignment.status === "pending" && "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                        )}
+                      >
+                        {assignment.status === "completed" ? "Responded" : "Pending"}
+                      </Badge>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {assignment.response && (
+                      <div className="text-sm mt-2">
+                        {(assignment.response as StandupResponse).response}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
