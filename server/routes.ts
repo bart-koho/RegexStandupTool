@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, responseSchema, users } from "@shared/schema";
+import { insertTeamMemberSchema, responseSchema, users, standups } from "@shared/schema";
 import { generateActivationToken, sendActivationEmail } from "./email";
 import { nanoid } from "nanoid";
 import { eq } from 'drizzle-orm';
@@ -109,6 +109,28 @@ export function registerRoutes(app: Express): Server {
     }
 
     res.status(200).json({ message: "Account activated successfully" });
+  });
+
+  // Add GET endpoint for single standup
+  app.get("/api/standups/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const standup = await db
+        .select()
+        .from(standups)
+        .where(eq(standups.id, parseInt(req.params.id)))
+        .limit(1);
+
+      if (!standup || standup.length === 0) {
+        return res.status(404).json({ message: "Standup not found" });
+      }
+
+      res.json(standup[0]);
+    } catch (error) {
+      console.error('Error fetching standup:', error);
+      res.status(500).json({ message: 'Failed to fetch standup' });
+    }
   });
 
   app.post("/api/standups", async (req, res) => {

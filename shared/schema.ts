@@ -24,6 +24,7 @@ export const teamMembers = pgTable("team_members", {
 export const standups = pgTable("standups", {
   id: serial("id").primaryKey(),
   identifier: text("identifier").notNull().unique(),
+  description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   userId: integer("user_id").notNull().references(() => users.id),
   status: text("status").notNull().default("draft"),
@@ -38,6 +39,7 @@ export const standupAssignments = pgTable("standup_assignments", {
   response: json("response").default(null),
 });
 
+// Relations remain unchanged
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   standups: many(standups),
@@ -85,8 +87,9 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers)
     email: z.string().email(),
   });
 
-export const insertStandupSchema = createInsertSchema(standups).pick({
-  identifier: true,
+// Remove identifier requirement from insert schema since it's generated server-side
+export const insertStandupSchema = z.object({
+  description: z.string().optional(),
 });
 
 export const responseSchema = z.object({
