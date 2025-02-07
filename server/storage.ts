@@ -68,6 +68,11 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, user.id));
 
+    await db
+      .update(teamMembers)
+      .set({ active: true })
+      .where(eq(teamMembers.userId, user.id));
+
     return true;
   }
 
@@ -81,7 +86,7 @@ export class DatabaseStorage implements IStorage {
         name: member.name,
         email: member.email,
         userId,
-        active: true,
+        active: false, 
       })
       .returning();
     return teamMember;
