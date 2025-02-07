@@ -27,6 +27,7 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new PostgresSessionStore({
       pool,
       createTableIfMissing: true,
+      tableName: 'session'
     });
   }
 
@@ -46,7 +47,7 @@ export class DatabaseStorage implements IStorage {
       email: insertUser.email!,
       password: insertUser.password,
       role: insertUser.role || 'team_member',
-      status: 'inactive',
+      status: insertUser.role === 'admin' ? 'active' : 'inactive',
       activationToken: insertUser.activationToken,
     }).returning();
     return user;

@@ -62,7 +62,8 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       secure: app.get("env") === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: "lax"
     }
   };
 
@@ -78,34 +79,63 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !user.password || !(await comparePasswords(password, user.password))) {
+        if (!user || !user.password) {
+          console.log('User not found or no password set');
           return done(null, false);
         }
+
+        const isValid = await comparePasswords(password, user.password);
+        if (!isValid) {
+          console.log('Invalid password');
+          return done(null, false);
+        }
+
         return done(null, user);
       } catch (err) {
+        console.error('Auth error:', err);
         return done(err);
       }
     }),
   );
 
   passport.serializeUser((user, done) => {
+    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log('Deserializing user:', id);
       const user = await storage.getUser(id);
       if (!user) {
+        console.log('User not found during deserialization');
         return done(null, false);
       }
       done(null, user);
     } catch (err) {
+      console.error('Deserialization error:', err);
       done(err);
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        console.error('Login error:', err);
+        return next(err);
+      }
+      if (!user) {
+        console.log('Login failed:', info);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Session error:', err);
+          return next(err);
+        }
+        return res.status(200).json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
