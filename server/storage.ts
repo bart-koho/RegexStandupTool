@@ -11,7 +11,7 @@ import {
   type InsertUser,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -173,39 +173,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTeamMember(id: number): Promise<void> {
     try {
-      // First get the team member to find their userId
       const [teamMember] = await db
         .select()
         .from(teamMembers)
         .where(eq(teamMembers.id, id));
 
       if (teamMember) {
-        // Check if the associated user is an admin before deletion
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, teamMember.userId));
-
-        if (user && user.role === 'admin') {
-          throw new Error('Cannot delete admin user');
-        }
-
-        // Delete all standup assignments for this team member
+        // Delete standup assignments first
         await db
           .delete(standupAssignments)
           .where(eq(standupAssignments.teamMemberId, id));
 
-        // Delete the team member record
+        // Delete team member record
         await db
           .delete(teamMembers)
           .where(eq(teamMembers.id, id));
 
-        // Finally delete the associated user if they're not an admin
-        if (user && user.role !== 'admin') {
-          await db
-            .delete(users)
-            .where(eq(users.id, teamMember.userId));
-        }
+        // Delete the associated user account, ensuring we only delete team_member users
+        await db
+          .delete(users)
+          .where(
+            and(
+              eq(users.id, teamMember.userId),
+              eq(users.role, 'team_member')
+            )
+          );
       }
     } catch (error) {
       console.error('Error deleting team member:', error);

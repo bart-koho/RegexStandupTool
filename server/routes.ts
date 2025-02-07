@@ -22,7 +22,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Check if user with email OR username already exists
+      // Check if user with email already exists
       const existingUser = await storage.getUserByEmail(parsed.data.email);
 
       if (existingUser) {
@@ -42,7 +42,7 @@ export function registerRoutes(app: Express): Server {
         activationToken,
       });
 
-      const member = await storage.createTeamMember(req.user!.id, {
+      const member = await storage.createTeamMember(user.id, {
         name: parsed.data.name,
         email: parsed.data.email,
       });
