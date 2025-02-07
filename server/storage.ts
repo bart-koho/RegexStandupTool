@@ -167,7 +167,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTeamMember(id: number): Promise<void> {
-    await db.delete(teamMembers).where(eq(teamMembers.id, id));
+    // First get the team member to find their userId
+    const [teamMember] = await db
+      .select()
+      .from(teamMembers)
+      .where(eq(teamMembers.id, id));
+
+    if (teamMember) {
+      // Delete the team member first (due to foreign key constraint)
+      await db.delete(teamMembers).where(eq(teamMembers.id, id));
+
+      // Then delete the associated user
+      await db.delete(users).where(eq(users.id, teamMember.userId));
+    }
   }
 }
 
